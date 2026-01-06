@@ -1,0 +1,384 @@
+/* Cleaned up and optimized for Tiptap */
+.ProseMirror {
+  @apply px-8 py-12 sm:px-12;
+}
+
+.ProseMirror .is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: hsl(var(--muted-foreground));
+  pointer-events: none;
+  height: 0;
+}
+
+.ProseMirror .is-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: hsl(var(--muted-foreground));
+  pointer-events: none;
+  height: 0;
+}
+
+/* Custom image styles */
+.ProseMirror img {
+  transition: filter 0.1s ease-in-out;
+
+  &:hover {
+    cursor: pointer;
+    filter: brightness(90%);
+  }
+
+  &.ProseMirror-selectednode {
+    outline: 3px solid hsl(var(--primary));
+    filter: brightness(90%);
+  }
+}
+
+.img-placeholder {
+  position: relative;
+
+  &:before {
+    content: "";
+    box-sizing: border-box;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 3px solid hsl(var(--muted));
+    border-top-color: hsl(var(--foreground));
+    animation: spinning 0.6s linear infinite;
+  }
+}
+
+@keyframes spinning {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Custom TODO list checkboxes */
+ul[data-type="taskList"] li > label {
+  margin-right: 0.2rem;
+  user-select: none;
+}
+
+@media screen and (max-width: 768px) {
+  ul[data-type="taskList"] li > label {
+    margin-right: 0.5rem;
+  }
+}
+
+ul[data-type="taskList"] li > label input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: hsl(var(--background));
+  margin: 0;
+  cursor: pointer;
+  width: 1.2em;
+  height: 1.2em;
+  position: relative;
+  top: 5px;
+  border: 2px solid hsl(var(--border));
+  margin-right: 0.3rem;
+  display: grid;
+  place-content: center;
+
+  &:hover {
+    background-color: hsl(var(--accent));
+  }
+
+  &:active {
+    background-color: hsl(var(--accent));
+  }
+
+  &::before {
+    content: "";
+    width: 0.65em;
+    height: 0.65em;
+    transform: scale(0);
+    transition: 120ms transform ease-in-out;
+    box-shadow: inset 1em 1em;
+    transform-origin: center;
+    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+  }
+
+  &:checked::before {
+    transform: scale(1);
+  }
+}
+
+ul[data-type="taskList"] li[data-checked="true"] > div > p {
+  color: hsl(var(--muted-foreground));
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+}
+
+/* Overwrite tippy-box original max-width */
+.tippy-box {
+  max-width: 400px !important;
+}
+
+.ProseMirror:not(.dragging) .ProseMirror-selectednode {
+  outline: none !important;
+  background-color: hsl(var(--primary) / 0.1);
+  transition: background-color 0.2s;
+  box-shadow: none;
+}
+
+.drag-handle {
+  position: fixed;
+  opacity: 1;
+  transition: opacity ease-in 0.2s;
+  border-radius: 0.25rem;
+
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' style='fill: rgba(0, 0, 0, 0.5)'%3E%3Cpath d='M3,2 C2.44771525,2 2,1.55228475 2,1 C2,0.44771525 2.44771525,0 3,0 C3.55228475,0 4,0.44771525 4,1 C4,1.55228475 3.55228475,2 3,2 Z M3,6 C2.44771525,6 2,5.55228475 2,5 C2,4.44771525 2.44771525,4 3,4 C3.55228475,4 4,4.44771525 4,5 C4,5.55228475 3.55228475,6 3,6 Z M3,10 C2.44771525,10 2,9.55228475 2,9 C2,8.44771525 2.44771525,8 3,8 C3.55228475,8 4,8.44771525 4,9 C4,9.55228475 3.55228475,10 3,10 Z M7,2 C6.44771525,2 6,1.55228475 6,1 C6,0.44771525 6.44771525,0 7,0 C7.55228475,0 8,0.44771525 8,1 C8,1.55228475 7.55228475,2 7,2 Z M7,6 C6.44771525,6 6,5.55228475 6,5 C6,4.44771525 6.44771525,4 7,4 C7.55228475,4 8,4.44771525 8,5 C8,5.55228475 7.55228475,6 7,6 Z M7,10 C6.44771525,10 6,9.55228475 6,9 C6,8.44771525 6.44771525,8 7,8 C7.55228475,8 8,8.44771525 8,9 C8,9.55228475 7.55228475,10 7,10 Z'%3E%3C/path%3E%3C/svg%3E");
+  background-size: calc(0.5em + 0.375rem) calc(0.5em + 0.375rem);
+  background-repeat: no-repeat;
+  background-position: center;
+  width: 1.2rem;
+  height: 1.5rem;
+  z-index: 50;
+  cursor: grab;
+
+  &:hover {
+    background-color: hsl(var(--muted));
+    transition: background-color 0.2s;
+  }
+
+  &:active {
+    background-color: hsl(var(--accent));
+    transition: background-color 0.2s;
+    cursor: grabbing;
+  }
+
+  &.hide {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @media screen and (max-width: 600px) {
+    display: none;
+    pointer-events: none;
+  }
+}
+
+.dark .drag-handle {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' style='fill: rgba(255, 255, 255, 0.5)'%3E%3Cpath d='M3,2 C2.44771525,2 2,1.55228475 2,1 C2,0.44771525 2.44771525,0 3,0 C3.55228475,0 4,0.44771525 4,1 C4,1.55228475 3.55228475,2 3,2 Z M3,6 C2.44771525,6 2,5.55228475 2,5 C2,4.44771525 2.44771525,4 3,4 C3.55228475,4 4,4.44771525 4,5 C4,5.55228475 3.55228475,6 3,6 Z M3,10 C2.44771525,10 2,9.55228475 2,9 C2,8.44771525 2.44771525,8 3,8 C3.55228475,8 4,8.44771525 4,9 C4,9.55228475 3.55228475,10 3,10 Z M7,2 C6.44771525,2 6,1.55228475 6,1 C6,0.44771525 6.44771525,0 7,0 C7.55228475,0 8,0.44771525 8,1 C8,1.55228475 7.55228475,2 7,2 Z M7,6 C6.44771525,6 6,5.55228475 6,5 C6,4.44771525 6.44771525,4 7,4 C7.55228475,4 8,4.44771525 8,5 C8,5.55228475 7.55228475,6 7,6 Z M7,10 C6.44771525,10 6,9.55228475 6,9 C6,8.44771525 6.44771525,8 7,8 C7.55228475,8 8,8.44771525 8,9 C8,9.55228475 7.55228475,10 7,10 Z'%3E%3C/path%3E%3C/svg%3E");
+}
+
+/* Custom Youtube Video CSS */
+iframe {
+  border: 8px solid hsl(var(--muted) / 0.3);
+  border-radius: 4px;
+  min-width: 200px;
+  min-height: 200px;
+  display: block;
+  outline: 0px solid transparent;
+}
+
+div[data-youtube-video] > iframe {
+  cursor: move;
+  aspect-ratio: 16 / 9;
+  width: 100%;
+}
+
+.ProseMirror-selectednode iframe {
+  transition: outline 0.15s;
+  outline: 6px solid hsl(var(--primary));
+}
+
+@media only screen and (max-width: 480px) {
+  div[data-youtube-video] > iframe {
+    max-height: 50px;
+  }
+}
+
+@media only screen and (max-width: 720px) {
+  div[data-youtube-video] > iframe {
+    max-height: 100px;
+  }
+}
+
+/* CSS for bold coloring and highlighting issue*/
+span[style] > strong {
+  color: inherit;
+}
+
+mark[style] > strong {
+  color: inherit;
+}
+
+/* Syntax highlighting styles for code blocks with lowlight */
+.ProseMirror pre code {
+  color: hsl(var(--foreground));
+  background: transparent;
+  font-family: "JetBrains Mono", "Fira Code", "Courier New", monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+/* Syntax highlighting tokens - Light mode */
+.ProseMirror .hljs-comment,
+.ProseMirror .hljs-quote {
+  color: #6a737d;
+  font-style: italic;
+}
+
+.ProseMirror .hljs-keyword,
+.ProseMirror .hljs-selector-tag,
+.ProseMirror .hljs-subst {
+  color: #d73a49;
+  font-weight: 600;
+}
+
+.ProseMirror .hljs-number,
+.ProseMirror .hljs-literal,
+.ProseMirror .hljs-variable,
+.ProseMirror .hljs-template-variable,
+.ProseMirror .hljs-tag .hljs-attr {
+  color: #005cc5;
+}
+
+.ProseMirror .hljs-string,
+.ProseMirror .hljs-doctag {
+  color: #032f62;
+}
+
+.ProseMirror .hljs-title,
+.ProseMirror .hljs-section,
+.ProseMirror .hljs-selector-id {
+  color: #6f42c1;
+  font-weight: 600;
+}
+
+.ProseMirror .hljs-type,
+.ProseMirror .hljs-class .hljs-title {
+  color: #22863a;
+  font-weight: 600;
+}
+
+.ProseMirror .hljs-tag,
+.ProseMirror .hljs-name,
+.ProseMirror .hljs-attribute {
+  color: #22863a;
+  font-weight: 400;
+}
+
+.ProseMirror .hljs-regexp,
+.ProseMirror .hljs-link {
+  color: #032f62;
+}
+
+.ProseMirror .hljs-symbol,
+.ProseMirror .hljs-bullet {
+  color: #e36209;
+}
+
+.ProseMirror .hljs-built_in,
+.ProseMirror .hljs-builtin-name {
+  color: #005cc5;
+}
+
+.ProseMirror .hljs-meta {
+  color: #6a737d;
+}
+
+.ProseMirror .hljs-deletion {
+  background: #ffeef0;
+}
+
+.ProseMirror .hljs-addition {
+  background: #f0fff4;
+}
+
+.ProseMirror .hljs-emphasis {
+  font-style: italic;
+}
+
+.ProseMirror .hljs-strong {
+  font-weight: 700;
+}
+
+/* Syntax highlighting tokens - Dark mode */
+.dark .ProseMirror .hljs-comment,
+.dark .ProseMirror .hljs-quote {
+  color: #8b949e;
+  font-style: italic;
+}
+
+.dark .ProseMirror .hljs-keyword,
+.dark .ProseMirror .hljs-selector-tag,
+.dark .ProseMirror .hljs-subst {
+  color: #ff7b72;
+  font-weight: 600;
+}
+
+.dark .ProseMirror .hljs-number,
+.dark .ProseMirror .hljs-literal,
+.dark .ProseMirror .hljs-variable,
+.dark .ProseMirror .hljs-template-variable,
+.dark .ProseMirror .hljs-tag .hljs-attr {
+  color: #79c0ff;
+}
+
+.dark .ProseMirror .hljs-string,
+.dark .ProseMirror .hljs-doctag {
+  color: #a5d6ff;
+}
+
+.dark .ProseMirror .hljs-title,
+.dark .ProseMirror .hljs-section,
+.dark .ProseMirror .hljs-selector-id {
+  color: #d2a8ff;
+  font-weight: 600;
+}
+
+.dark .ProseMirror .hljs-type,
+.dark .ProseMirror .hljs-class .hljs-title {
+  color: #7ee787;
+  font-weight: 600;
+}
+
+.dark .ProseMirror .hljs-tag,
+.dark .ProseMirror .hljs-name,
+.dark .ProseMirror .hljs-attribute {
+  color: #7ee787;
+  font-weight: 400;
+}
+
+.dark .ProseMirror .hljs-regexp,
+.dark .ProseMirror .hljs-link {
+  color: #a5d6ff;
+}
+
+.dark .ProseMirror .hljs-symbol,
+.dark .ProseMirror .hljs-bullet {
+  color: #ffa657;
+}
+
+.dark .ProseMirror .hljs-built_in,
+.dark .ProseMirror .hljs-builtin-name {
+  color: #79c0ff;
+}
+
+.dark .ProseMirror .hljs-meta {
+  color: #8b949e;
+}
+
+.dark .ProseMirror .hljs-deletion {
+  background: #490202;
+}
+
+.dark .ProseMirror .hljs-addition {
+  background: #033a16;
+}
+
+.dark .ProseMirror .hljs-emphasis {
+  font-style: italic;
+}
+
+.dark .ProseMirror .hljs-strong {
+  font-weight: 700;
+}

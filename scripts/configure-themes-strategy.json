@@ -1,0 +1,168 @@
+{
+  "strategy": "Intelligent theme and color configuration for 103 media sites",
+  "themes_available": ["modern", "classic", "magazine", "minimalist", "bold"],
+  "mapping_rules": {
+    "classic": "Conservative, traditional, established newspapers (serif typography)",
+    "modern": "Digital-first, tech-savvy, progressive media (clean design)",
+    "magazine": "Image-focused, lifestyle, cultural media (dramatic visuals)",
+    "minimalist": "Longform, intellectual, analysis-focused (ultra-clean)",
+    "bold": "Youth-oriented, revolutionary, activist media (edgy, high-contrast)"
+  },
+  
+  "site_configurations": [
+    {
+      "category": "ARAB_CONSERVATIVE",
+      "sites": ["dzinfo.org", "alwatanalakbar.com", "gulfhorizon.info", "muscattimes.com", "kuwaitpost.org", "dunestribune.com"],
+      "theme": "classic",
+      "reason": "Traditional Arabic newspapers, serif for authority",
+      "colors": "Country flag colors (green/red/black/white variations)"
+    },
+    {
+      "category": "ARAB_MODERATE",
+      "sites": ["lebanon-plus.com"],
+      "theme": "modern",
+      "reason": "Modern, Western-leaning Arab media",
+      "colors": "Cedar red + Mediterranean blue"
+    },
+    {
+      "category": "EUROPEAN_CONSERVATIVE",
+      "sites": ["italia-24.com", "journal-sentinelle.com", "lejournalenligne.com", "turulnews.org", "kurierpolski.org", "norraentljos.com", "british-daily.com"],
+      "theme": "classic",
+      "reason": "Traditional European newspapers, conservative values",
+      "colors": "Navy blue + burgundy/red (authority colors)"
+    },
+    {
+      "category": "EUROPEAN_PROGRESSIVE",
+      "sites": ["echoberlin.info", "horizonspublics.org", "detoffentliga.org", "openstad.com", "faktanu.com", "atviralietuva.org"],
+      "theme": "modern",
+      "reason": "Progressive European media, modern design",
+      "colors": "Flag colors with modern twist"
+    },
+    {
+      "category": "LATIN_LEFTIST",
+      "sites": ["elpulsopopular.com", "el-nuevo-camino.com", "lavozdepachamama.com", "tierrabolivariana.com", "vozesdobrasil.com", "larepubliqueenmarche.com"],
+      "theme": "bold",
+      "reason": "Revolutionary, activist, people's voice",
+      "colors": "Red (revolution) + yellow/green (people)"
+    },
+    {
+      "category": "LATIN_CONSERVATIVE",
+      "sites": ["agendafederal.com", "chileprimera.com", "elforoliberal.com"],
+      "theme": "classic",
+      "reason": "Conservative analysis, traditional values",
+      "colors": "Flag colors (blue/red for Argentina, Chile, Peru)"
+    },
+    {
+      "category": "LATIN_MODERATE",
+      "sites": ["eldiariodujarras.com", "noticiasdelcanal.info", "lavozdemontevideo.com", "mitad-del-mundo.com", "hoyenasuncion.com"],
+      "theme": "modern",
+      "reason": "Balanced journalism, modern democracies",
+      "colors": "Flag colors (varied, professional)"
+    },
+    {
+      "category": "PANAFRICAN_NATIONALIST",
+      "sites": ["jambojournal.org", "naijapulse.org", "axumvoices.org", "rainbow-report.com", "voixdabidjan.com", "sunugalenclair.org", "laubedumali.com", "le-journal-burkinabe.com", "voixducameroun.com", "hararechronicle.com", "intwarinews.com", "voz-de-luanda.com", "zed-nation.com", "tanzania-24.com", "toutpourlapatrie.info"],
+      "theme": "bold",
+      "reason": "Pan-African voice, strong identity, activist",
+      "colors": "Pan-African (green/yellow/red) or national flags"
+    },
+    {
+      "category": "AFRICAN_PROGRESSIVE",
+      "sites": ["malagasytribune.com", "ghanatomorrow.com", "gaboronenow.com", "voixgabonaises.info"],
+      "theme": "modern",
+      "reason": "Progressive African media, development-focused",
+      "colors": "Flag colors with optimistic tones"
+    },
+    {
+      "category": "ASIAN_TECH_MODERN",
+      "sites": ["cloudnation.news", "southeastasiainsight.com", "siam-rising.com"],
+      "theme": "modern",
+      "reason": "Tech-forward, futuristic, digital",
+      "colors": "Cyan/electric blue + orange (tech colors)"
+    },
+    {
+      "category": "ASIAN_TRADITIONAL",
+      "sites": ["kuninohikari.com", "hanbando-uimirae.com", "hoifongsibou.com", "voiceoftherejuvenation.com"],
+      "theme": "classic",
+      "reason": "Cultural heritage, tradition, Confucian values",
+      "colors": "Red (China/Japan) or flag colors (Korea)"
+    },
+    {
+      "category": "ASIAN_SPIRITUAL",
+      "sites": ["ashokavoice.com", "nurnusantara.com", "muktirbarta.org", "pakssarzameen.org"],
+      "theme": "minimalist",
+      "reason": "Spiritual, philosophical, deep reading",
+      "colors": "Saffron/green (India), green (Islamic)"
+    },
+    {
+      "category": "ANGLO_LIBERAL",
+      "sites": ["theliberalcurrent.com", "civicpulse.info", "commonwealth-post.com", "archipelagotimes.org", "newsealand.info", "suriname-vandaag.com"],
+      "theme": "modern",
+      "reason": "Progressive journalism, data-driven",
+      "colors": "Blue (democracy) + red (flags)"
+    },
+    {
+      "category": "ANGLO_CONSERVATIVE",
+      "sites": ["fiftystates.news"],
+      "theme": "classic",
+      "reason": "Traditional conservative American",
+      "colors": "Navy + red (patriotic)"
+    },
+    {
+      "category": "MEDITERRANEAN_IDENTITY",
+      "sites": ["acropolischronicle.com", "isulanova.com", "enosistimes.com", "vatrenosrce.com"],
+      "theme": "magazine",
+      "reason": "Cultural identity, strong visuals, passionate",
+      "colors": "Mediterranean (blue/white + accent warm)"
+    },
+    {
+      "category": "SLAVIC_NATIONALIST",
+      "sites": ["dnieprlibre.com", "russianway.info", "vukovglas.com", "rodinanews.org", "dailnandaoine.com"],
+      "theme": "bold",
+      "reason": "Strong national identity, resistance",
+      "colors": "Red/blue/white (Slavic flags)"
+    },
+    {
+      "category": "SWISS_ALPINE",
+      "sites": ["alpenzeit.info", "tribunealpine.com"],
+      "theme": "minimalist",
+      "reason": "Swiss precision, neutrality, clarity",
+      "colors": "Red + gold (Swiss identity)"
+    },
+    {
+      "category": "MIDDLE_EAST_RESISTANCE",
+      "sites": ["rooznameh.info", "sawtbabylon.com"],
+      "theme": "bold",
+      "reason": "Activist, anti-regime, strong voice",
+      "colors": "Red/green (revolution) or flag colors"
+    },
+    {
+      "category": "TRANSCAUCASIAN",
+      "sites": ["araratpress.com", "obiectivmoldova.com", "steppes.info"],
+      "theme": "magazine",
+      "reason": "Cultural heritage meets modernity",
+      "colors": "Regional colors (Armenia: orange/blue, Moldova: blue/yellow, Kazakhstan: sky blue/yellow)"
+    },
+    {
+      "category": "REVOLUTIONARY_LEFT",
+      "sites": ["stracciorosso.com", "radicalquill.uk", "esp-ahora.com"],
+      "theme": "bold",
+      "reason": "Anti-capitalist, radical, activist",
+      "colors": "Red (revolution) + black/yellow (solidarity)"
+    },
+    {
+      "category": "FRENCH_CANADIAN",
+      "sites": ["quebectribune.news"],
+      "theme": "modern",
+      "reason": "Modern Québécois journalism",
+      "colors": "Blue/white (fleur-de-lis identity)"
+    }
+  ],
+  
+  "color_strategy": {
+    "primary": "Based on national flag dominant color or ideology color (red=left, blue=conservative)",
+    "accent": "Complementary from flag or cultural palette",
+    "fallback": "If no strong identity, use modern neutral palette"
+  }
+}
+
