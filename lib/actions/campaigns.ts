@@ -71,7 +71,7 @@ export async function createCampaignAction(
 
     return { success: true, campaignId: campaign.id }
   } catch (error) {
-    void error
+    console.error("Action failed:", error instanceof Error ? error.message : error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to create campaign",
@@ -95,7 +95,7 @@ export async function updateCampaignAction(
 
     return { success: true }
   } catch (error) {
-    void error
+    console.error("Action failed:", error instanceof Error ? error.message : error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to update campaign",
@@ -115,7 +115,7 @@ export async function deleteCampaignAction(id: number): Promise<{ success: boole
 
     return { success: true }
   } catch (error) {
-    void error
+    console.error("Action failed:", error instanceof Error ? error.message : error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to delete campaign",
@@ -149,7 +149,7 @@ export async function deleteCampaignWithArticlesAction(
       deletedArticles: result.deletedArticles,
     }
   } catch (error) {
-    void error
+    console.error("Action failed:", error instanceof Error ? error.message : error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to delete campaign and articles",

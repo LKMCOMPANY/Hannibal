@@ -74,7 +74,7 @@ export async function createArticle(input: CreateArticleInput): Promise<ArticleW
         await scheduleXPublicationForArticle(article)
       } catch (error) {
         // Log error but don't fail article creation
-        void error
+        console.error("Scheduling failed:", error instanceof Error ? error.message : error)
       }
     }
 
@@ -91,13 +91,13 @@ export async function createArticle(input: CreateArticleInput): Promise<ArticleW
         }
       } catch (error) {
         // Log error but don't fail article creation
-        void error
+        console.error("Indexing failed:", error instanceof Error ? error.message : error)
       }
     }
 
     return article
   } catch (error) {
-    void error
+    console.error("DB insert failed:", error instanceof Error ? error.message : error)
     throw new Error("Failed to create article in database")
   }
 }
@@ -115,7 +115,6 @@ async function scheduleXPublicationForArticle(article: ArticleWithId): Promise<v
     // Get site info for domain
     const site = await getSiteById(article.site_id)
     if (!site) {
-      void 0
       return
     }
 
@@ -149,9 +148,8 @@ async function scheduleXPublicationForArticle(article: ArticleWithId): Promise<v
       600 // 10 minutes
     )
 
-    void 0
   } catch (error) {
-    void error
+    console.error("Scheduling error:", error instanceof Error ? error.message : error)
     throw error
   }
 }
@@ -222,7 +220,7 @@ export async function updateArticle(id: number, input: UpdateArticleInput): Prom
 
     return result[0] as ArticleWithId
   } catch (error) {
-    void error
+    console.error("DB update failed:", error instanceof Error ? error.message : error)
     throw error
   }
 }
@@ -338,7 +336,7 @@ export async function bulkCreateArticles(articles: CreateArticleInput[]): Promis
     const result = await sql.unsafe(query, await Promise.all(values))
     return result as ArticleWithId[]
   } catch (error) {
-    void error
+    console.error("Bulk insert failed:", error instanceof Error ? error.message : error)
     throw new Error("Failed to bulk create articles")
   }
 }
@@ -370,7 +368,7 @@ export async function slugExists(slug: string, siteId: number, excludeId?: numbe
 
     return result.length > 0
   } catch (error) {
-    void error
+    console.error("DB query failed:", error instanceof Error ? error.message : error)
     return false
   }
 }

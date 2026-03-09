@@ -59,6 +59,7 @@ export async function processXPublication(job: XPublicationJob): Promise<Process
     }
 
   } catch (error) {
+    console.error("Job processing failed:", error instanceof Error ? error.message : error)
     const errorMessage = error instanceof Error ? error.message : "Unknown error"
     await updateXPublicationStatus(publicationId, 'failed', undefined, undefined, errorMessage)
 

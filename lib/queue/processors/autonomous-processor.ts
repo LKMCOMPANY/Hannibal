@@ -125,6 +125,7 @@ export async function processAutonomousPublication(
     }
 
   } catch (error) {
+    console.error("Job processing failed:", error instanceof Error ? error.message : error)
     const errorMessage = error instanceof Error ? error.message : "Unknown error"
     await updatePublicationStatus(publicationId, "failed", undefined, errorMessage)
 
@@ -155,7 +156,7 @@ async function generateAutonomousArticle(
         authorStyle = authorResult[0].writing_style || ""
       }
     } catch (error) {
-      void error
+      console.error("DB query failed:", error instanceof Error ? error.message : error)
     }
   }
 

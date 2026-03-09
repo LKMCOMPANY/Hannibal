@@ -209,7 +209,6 @@ export class TwitterClient {
         },
       }
     } catch (error: any) {
-      void error
       return {
         success: false,
         message: `Connection error: ${error.message}`,
@@ -269,7 +268,6 @@ export class TwitterClient {
 
       return data.data
     } catch (error: any) {
-      void error
       throw error
     }
   }

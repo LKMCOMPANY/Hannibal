@@ -156,7 +156,7 @@ export async function verifyQStashSignature(signature: string, signingKey: strin
 
     return true
   } catch (error) {
-    void error
+    console.error("Signature verification failed:", error instanceof Error ? error.message : error)
     return false
   }
 }

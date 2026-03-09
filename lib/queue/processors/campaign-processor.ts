@@ -69,7 +69,6 @@ export async function processCampaignPublication(job: CampaignPublicationJob): P
       const targetAuthors = await getAuthorsBySiteId(targetSiteId)
 
       if (targetAuthors.length === 0) {
-        void 0
         finalTargetAuthorId = null
       } else {
         // Try to find author with same name as source article author
@@ -107,7 +106,7 @@ export async function processCampaignPublication(job: CampaignPublicationJob): P
     const validCategoryValues = ARTICLE_CATEGORIES.map((c) => c.value)
     const finalCategory = validCategoryValues.includes(category) ? category : "Politics"
 
-    void (category !== finalCategory)
+    void 0
 
     const generatedSlug = await generateUniqueSlug(title, targetSiteId)
 
@@ -166,11 +165,10 @@ export async function processCampaignPublication(job: CampaignPublicationJob): P
       articleId: createdArticle.id,
     }
   } catch (error) {
-    void error
+    console.error("Job processing failed:", error instanceof Error ? error.message : error)
 
     const errorMessage = error instanceof Error ? error.message : "Unknown error"
 
-    // Update publication status to failed
     await updatePublicationStatus(publicationId, "failed", undefined, errorMessage)
 
     // Update campaign status if needed
@@ -206,7 +204,7 @@ async function updatePublicationStatus(
       WHERE id = ${publicationId}
     `
   } catch (error) {
-    void error
+    console.error("DB update failed:", error instanceof Error ? error.message : error)
     throw error
   }
 }
@@ -254,8 +252,7 @@ async function checkAndUpdateCampaignStatus(campaignId: number): Promise<void> {
       WHERE id = ${campaignId}
     `
   } catch (error) {
-    void error
-    // Don't throw - this is not critical
+    console.error("Status check failed:", error instanceof Error ? error.message : error)
   }
 }
 
@@ -269,7 +266,7 @@ async function getAuthorById(authorId: number) {
     `
     return result[0] || null
   } catch (error) {
-    void error
+    console.error("DB query failed:", error instanceof Error ? error.message : error)
     return null
   }
 }

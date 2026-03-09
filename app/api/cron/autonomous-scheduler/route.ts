@@ -100,6 +100,7 @@ async function handler(request: NextRequest) {
     })
 
   } catch (error) {
+    console.error("Route handler error:", error instanceof Error ? error.message : error)
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : "Error" },
       { status: 500 }

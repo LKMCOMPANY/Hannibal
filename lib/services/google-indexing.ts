@@ -111,7 +111,7 @@ async function logIndexingAttempt(
     `
   } catch (error) {
     // Swallow errors - logging failure shouldn't break anything
-    void error
+    console.error("Logging failed:", error instanceof Error ? error.message : error)
   }
 }
 
