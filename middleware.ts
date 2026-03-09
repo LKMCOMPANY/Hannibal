@@ -30,9 +30,9 @@ const sql = neon(process.env.DATABASE_URL!)
 
 export async function middleware(request: NextRequest) {
   const url = request.nextUrl
-  // Check for X-Forwarded-Host first (from Cloudflare Worker/Reverse Proxy)
-  // Fallback to standard host header
-  const hostname = request.headers.get("x-forwarded-host") || request.headers.get("host") || ""
+  // Check for X-Tenant-Host first (custom header from Cloudflare Worker, not overwritten by Vercel)
+  // Then X-Forwarded-Host, then standard host header
+  const hostname = request.headers.get("x-tenant-host") || request.headers.get("x-forwarded-host") || request.headers.get("host") || ""
   const path = url.pathname
 
   // Skip middleware for static files, API routes, and Next.js internals
