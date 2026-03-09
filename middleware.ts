@@ -50,10 +50,11 @@ export async function middleware(request: NextRequest) {
 
   const isAdminHostname = ADMIN_HOSTNAMES.some((adminHost) => hostname.includes(adminHost))
   const isRenderPreview = hostname.includes(".onrender.com") // Render preview/staging
+  const isVercelDeploy = hostname.includes(".vercel.app") // Vercel deployments
   const isDevelopment = process.env.NODE_ENV === "development"
 
   // Admin domain or preview environment - check authentication for dashboard routes
-  if (isAdminHostname || isRenderPreview || isDevelopment) {
+  if (isAdminHostname || isRenderPreview || isVercelDeploy || isDevelopment) {
     // Check if user is trying to access dashboard routes
     if (path.startsWith("/dashboard")) {
       const cookies = request.headers.get("cookie")
