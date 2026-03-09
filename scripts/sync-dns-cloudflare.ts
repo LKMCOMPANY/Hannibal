@@ -22,7 +22,7 @@ import { neon } from "@neondatabase/serverless"
 // Configuration
 const DATABASE_URL = process.env.DATABASE_URL
 const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN
-const RENDER_SERVICE_NAME = process.env.RENDER_SERVICE_NAME || "hannibalv2.onrender.com"
+const CNAME_TARGET = process.env.CNAME_TARGET || "cname.vercel-dns.com"
 
 if (!DATABASE_URL) {
   console.error("❌ DATABASE_URL non défini dans .env")
@@ -196,7 +196,7 @@ async function createCNAMERecord(
           name: name,
           content: content,
           ttl: 1, // Auto
-          proxied: false, // DNS only (important pour Render SSL)
+          proxied: false, // DNS only (important pour Vercel SSL)
         }),
       }
     )
@@ -234,7 +234,7 @@ async function updateCNAMERecord(
         },
         body: JSON.stringify({
           content: content,
-          proxied: false, // Toujours DNS only
+          proxied: false,
         }),
       }
     )
@@ -254,7 +254,7 @@ async function main() {
   const isDryRun = args.includes("--dry-run")
   const isForce = args.includes("--force")
   
-  console.log("🌐 Synchronisation DNS Cloudflare → Render\n")
+  console.log("🌐 Synchronisation DNS Cloudflare → Vercel\n")
   console.log("━".repeat(70))
   
   // 1. Récupérer les domaines depuis la database
@@ -316,7 +316,7 @@ async function main() {
       console.log(`\n📦 Zone: ${zoneName}`)
       domains.forEach(domain => {
         const subdomain = domain === zoneName ? "@" : domain.replace(`.${zoneName}`, '')
-        console.log(`   → CNAME ${subdomain} → ${RENDER_SERVICE_NAME}`)
+        console.log(`   → CNAME ${subdomain} → ${CNAME_TARGET}`)
       })
     })
     
@@ -355,18 +355,18 @@ async function main() {
       )
       
       // Si CNAME existe déjà vers Render, skip
-      if (existingMain && existingMain.type === "CNAME" && existingMain.content === RENDER_SERVICE_NAME && !isForce) {
-        console.log(`      ✓ CNAME existe déjà et pointe vers Render (skip)`)
+      if (existingMain && existingMain.type === "CNAME" && existingMain.content === CNAME_TARGET && !isForce) {
+        console.log(`      ✓ CNAME existe déjà et pointe vers Vercel (skip)`)
         totalSkipped++
         continue
       }
       
       // Si CNAME existe mais pointe ailleurs
-      if (existingMain && existingMain.type === "CNAME" && existingMain.content !== RENDER_SERVICE_NAME) {
+      if (existingMain && existingMain.type === "CNAME" && existingMain.content !== CNAME_TARGET) {
         console.log(`      ⚠️  CNAME existe mais pointe vers: ${existingMain.content}`)
-        console.log(`      🔄 Mise à jour vers: ${RENDER_SERVICE_NAME}`)
-        
-        const success = await updateCNAMERecord(zone.id, existingMain.id, RENDER_SERVICE_NAME)
+        console.log(`      🔄 Mise à jour vers: ${CNAME_TARGET}`)
+
+        const success = await updateCNAMERecord(zone.id, existingMain.id, CNAME_TARGET)
         if (success) {
           console.log(`      ✅ CNAME mis à jour !`)
           totalUpdated++
@@ -387,12 +387,11 @@ async function main() {
         }
         
         console.log(`      ✅ ${existingMain.type} record supprimé`)
-        console.log(`      ➕ Création CNAME: ${subdomain} → ${RENDER_SERVICE_NAME}`)
-        
-        // Petite pause après suppression
+        console.log(`      ➕ Création CNAME: ${subdomain} → ${CNAME_TARGET}`)
+
         await new Promise(resolve => setTimeout(resolve, 1000))
-        
-        const success = await createCNAMERecord(zone.id, subdomain, RENDER_SERVICE_NAME)
+
+        const success = await createCNAMERecord(zone.id, subdomain, CNAME_TARGET)
         if (success) {
           console.log(`      ✅ CNAME créé !`)
           totalCreated++
@@ -401,9 +400,9 @@ async function main() {
           totalErrors++
         }
       } else if (!existingMain) {
-        console.log(`      ➕ Création CNAME: ${subdomain} → ${RENDER_SERVICE_NAME}`)
-        
-        const success = await createCNAMERecord(zone.id, subdomain, RENDER_SERVICE_NAME)
+        console.log(`      ➕ Création CNAME: ${subdomain} → ${CNAME_TARGET}`)
+
+        const success = await createCNAMERecord(zone.id, subdomain, CNAME_TARGET)
         if (success) {
           console.log(`      ✅ CNAME créé !`)
           totalCreated++
@@ -433,8 +432,8 @@ async function main() {
     console.log("\n✅ Configuration DNS Cloudflare terminée !")
     console.log("\n📝 Prochaines étapes:")
     console.log("   1. Attendre propagation DNS (~5-30 minutes)")
-    console.log("   2. Ajouter les domaines dans Render (via support ou script)")
-    console.log("   3. Vérifier chaque domaine dans Render Dashboard")
+    console.log("   2. Ajouter les domaines dans Vercel (Settings → Domains)")
+    console.log("   3. Vérifier chaque domaine dans Vercel Dashboard")
     console.log("\n💡 Tip: Utilisez https://dnschecker.org pour vérifier la propagation")
   }
 }

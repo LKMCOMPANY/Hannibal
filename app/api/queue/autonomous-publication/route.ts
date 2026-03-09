@@ -1,3 +1,5 @@
+export const maxDuration = 60
+
 import { type NextRequest, NextResponse } from "next/server"
 import { verifySignatureAppRouter } from "@upstash/qstash/nextjs"
 import { processAutonomousPublication } from "@/lib/queue/processors/autonomous-processor"
@@ -30,7 +32,9 @@ async function handler(request: NextRequest) {
   }
 }
 
-export const POST = handler;
+export const POST = process.env.QSTASH_SKIP_VERIFICATION === "true"
+  ? handler
+  : verifySignatureAppRouter(handler)
 
 export async function GET() {
   return NextResponse.json({

@@ -1,3 +1,5 @@
+export const maxDuration = 60
+
 import { type NextRequest, NextResponse } from "next/server"
 import { verifySignatureAppRouter } from "@upstash/qstash/nextjs"
 import { processXPublication } from "@/lib/queue/processors/x-publisher-processor"

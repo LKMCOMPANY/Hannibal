@@ -17,13 +17,7 @@ import { isAuthenticated } from "@/lib/auth/dev-auth"
  * - Authentication check for admin routes
  */
 
-  // Admin hostnames that should access the dashboard
-  const ADMIN_HOSTNAMES = [
-    "localhost",
-    "hannibal.media", // Hardcoded production admin domain
-    process.env.NEXT_PUBLIC_ADMIN_HOSTNAME,
-    process.env.RENDER_EXTERNAL_HOSTNAME,
-  ].filter(Boolean) as string[]
+import { ADMIN_HOSTNAMES } from "@/lib/constants/hostnames"
 
 // Initialize database connection for Edge Runtime
 const sql = neon(process.env.DATABASE_URL!)
@@ -49,12 +43,10 @@ export async function middleware(request: NextRequest) {
   const cleanDomain = hostname.split(":")[0]
 
   const isAdminHostname = ADMIN_HOSTNAMES.some((adminHost) => hostname.includes(adminHost))
-  const isRenderPreview = hostname.includes(".onrender.com") // Render preview/staging
-  const isVercelDeploy = hostname.includes(".vercel.app") // Vercel deployments
+  const isVercelDeploy = hostname.includes(".vercel.app")
   const isDevelopment = process.env.NODE_ENV === "development"
 
-  // Admin domain or preview environment - check authentication for dashboard routes
-  if (isAdminHostname || isRenderPreview || isVercelDeploy || isDevelopment) {
+  if (isAdminHostname || isVercelDeploy || isDevelopment) {
     // Check if user is trying to access dashboard routes
     if (path.startsWith("/dashboard")) {
       const cookies = request.headers.get("cookie")

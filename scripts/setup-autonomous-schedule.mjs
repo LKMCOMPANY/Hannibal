@@ -4,8 +4,16 @@
  * Creates the correct hourly schedule for autonomous publications
  */
 
-const QSTASH_TOKEN = process.env.QSTASH_TOKEN || "eyJVc2VySUQiOiI1ODlhZDJjNy0yNzg2LTQwZjEtYjM3OC1mY2JmYzkwYWY3MDUiLCJQYXNzd29yZCI6IjQwOGMyOGY3OTE1YjQ1MWFhYmRkZTJlOTQzZmM2OWE0In0="
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://hannibalv2.onrender.com"
+const QSTASH_TOKEN = process.env.QSTASH_TOKEN
+if (!QSTASH_TOKEN) {
+  console.error("❌ QSTASH_TOKEN env var is required")
+  process.exit(1)
+}
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL
+if (!APP_URL) {
+  console.error("❌ NEXT_PUBLIC_APP_URL env var is required")
+  process.exit(1)
+}
 
 async function setupSchedule() {
   console.log("⏰ Setting up Autonomous QStash Schedule\n")
@@ -104,7 +112,7 @@ async function setupSchedule() {
     
     console.log("\n🔍 Monitor:")
     console.log(`   QStash: https://console.upstash.com/qstash`)
-    console.log(`   Logs: Dashboard Render → Logs → Search "[Autonomous"`)
+    console.log(`   Logs: Vercel Dashboard → Functions → Logs`)
     console.log(`   DB: SELECT * FROM autonomous_publications ORDER BY created_at DESC`)
     
     console.log("\n🎯 What will happen:")

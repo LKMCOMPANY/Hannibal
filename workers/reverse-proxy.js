@@ -1,9 +1,12 @@
 /**
- * Hannibal Reverse Proxy Worker
- * Service Worker Format (Legacy but robust for simple API uploads)
+ * Hannibal Reverse Proxy Worker (Cloudflare)
+ *
+ * Proxies custom-domain requests to the Vercel deployment,
+ * forwarding the original hostname so the Next.js middleware
+ * can resolve the correct tenant site.
  */
 
-const RENDER_BACKEND = "https://hannibal-isp1.onrender.com";
+const VERCEL_BACKEND = "https://hannibal.media";
 
 addEventListener("fetch", event => {
   event.respondWith(handleRequest(event.request));
@@ -12,27 +15,19 @@ addEventListener("fetch", event => {
 async function handleRequest(request) {
   const url = new URL(request.url);
   const originalHost = url.hostname;
-  
-  // Construct the target URL on Render
-  const targetUrl = new URL(url.pathname + url.search, RENDER_BACKEND);
 
-  // Clone the original headers
-  // Note: In Service Worker format, we need to be careful with immutable headers
+  const targetUrl = new URL(url.pathname + url.search, VERCEL_BACKEND);
+
   const newHeaders = new Headers();
   for (const [key, value] of request.headers) {
     newHeaders.set(key, value);
   }
-  
-  // 1. Set 'Host' to Render's domain so Render accepts the request
-  newHeaders.set("Host", new URL(RENDER_BACKEND).hostname);
-  
-  // 2. Set 'X-Forwarded-Host' to the original domain (Client Domain)
+
+  newHeaders.set("Host", new URL(VERCEL_BACKEND).hostname);
   newHeaders.set("X-Forwarded-Host", originalHost);
-  
-  // 3. Ensure 'X-Forwarded-Proto' is set
+  newHeaders.set("X-Tenant-Host", originalHost);
   newHeaders.set("X-Forwarded-Proto", "https");
 
-  // Create the new request
   const newRequest = new Request(targetUrl, {
     method: request.method,
     headers: newHeaders,
@@ -40,13 +35,11 @@ async function handleRequest(request) {
     redirect: "manual"
   });
 
-  // Fetch from Render
   const response = await fetch(newRequest);
-  
-  // Return the response
+
   const responseHeaders = new Headers(response.headers);
   responseHeaders.set("X-Hannibal-Proxy", "active");
-  
+
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,

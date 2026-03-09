@@ -4,10 +4,17 @@
  * Creates an hourly schedule using QStash REST API
  */
 
-const QSTASH_TOKEN = process.env.QSTASH_TOKEN || "eyJVc2VySUQiOiI1ODlhZDJjNy0yNzg2LTQwZjEtYjM3OC1mY2JmYzkwYWY3MDUiLCJQYXNzd29yZCI6IjQwOGMyOGY3OTE1YjQ1MWFhYmRkZTJlOTQzZmM2OWE0In0="
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 
-                (process.env.RENDER_EXTERNAL_URL ? `https://${process.env.RENDER_EXTERNAL_URL}` : null) ||
-                "https://hannibalv2.onrender.com"  // Fallback to your Render URL
+const QSTASH_TOKEN = process.env.QSTASH_TOKEN
+if (!QSTASH_TOKEN) {
+  console.error("❌ QSTASH_TOKEN env var is required")
+  process.exit(1)
+}
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL
+if (!APP_URL) {
+  console.error("❌ NEXT_PUBLIC_APP_URL env var is required")
+  process.exit(1)
+}
 
 async function setupSchedule() {
   console.log("⏰ Setting up QStash Schedule for Autonomous Publications...\n")
@@ -25,7 +32,7 @@ async function setupSchedule() {
     
     const scheduleConfig = {
       destination: destinationUrl,
-      cron: "0 * * * *", // Every hour at minute 0
+      cron: "0 * * * *",
     }
 
     console.log("📡 Creating schedule via QStash API...\n")
@@ -58,11 +65,6 @@ async function setupSchedule() {
     console.log("✅ QSTASH SCHEDULE SETUP COMPLETE!")
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
-    console.log("\n📝 System Status:")
-    console.log("   1. ✅ Database migration completed")
-    console.log("   2. ✅ QStash schedule created")
-    console.log("   3. 🎯 Ready for autonomous publications!")
-
     console.log("\n🧪 Next steps:")
     console.log("   1. Go to /dashboard/autonomous-media")
     console.log("   2. Configure media sites (select hours, toggle enable)")
@@ -86,4 +88,3 @@ async function setupSchedule() {
 }
 
 setupSchedule()
-

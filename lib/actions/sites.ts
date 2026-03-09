@@ -4,59 +4,22 @@ import { revalidatePath } from "next/cache"
 import { updateSite, createSite, type SiteUpdateInput } from "@/lib/data/sites"
 
 /**
- * Server action to update a site field
- * Used for auto-save functionality
+ * Auto-save: persists fields WITHOUT revalidating the page.
+ * revalidatePath triggers a full RSC re-render on Vercel which can
+ * remount the client form, resetting debounce timers and local state.
  */
-export async function updateSiteField(
-  siteId: number,
-  field: string,
-  value: any,
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    const updateData: SiteUpdateInput = {
-      [field]: value,
-    }
-
-    await updateSite(siteId, updateData)
-
-    // Revalidate the media pages to reflect changes
-    revalidatePath("/dashboard/medias")
-    revalidatePath(`/dashboard/medias/${siteId}`)
-
-    if (field === "theme_layout" || field === "theme_primary_color" || field === "theme_accent_color") {
-      revalidatePath(`/site/${siteId}`, "layout")
-    }
-
-    return { success: true }
-  } catch (error) {
-    console.error("[v0] Error updating site field:", error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to update site",
-    }
-  }
-}
-
-/**
- * Server action to update multiple site fields at once
- */
-export async function updateSiteFields(
+export async function autoSaveSiteFields(
   siteId: number,
   data: SiteUpdateInput,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     await updateSite(siteId, data)
-
-    // Revalidate the media pages to reflect changes
-    revalidatePath("/dashboard/medias")
-    revalidatePath(`/dashboard/medias/${siteId}`)
-
     return { success: true }
   } catch (error) {
-    console.error("[v0] Error updating site fields:", error)
+    console.error("Error auto-saving site fields:", error)
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to update site",
+      error: error instanceof Error ? error.message : "Failed to save",
     }
   }
 }
@@ -79,12 +42,11 @@ export async function createNewSite(name: string): Promise<{ success: boolean; s
       status: "draft",
     })
 
-    // Revalidate the medias list page
     revalidatePath("/dashboard/medias")
 
     return { success: true, siteId: newSite.id }
   } catch (error) {
-    console.error("[v0] Error creating site:", error)
+    console.error("Error creating site:", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to create site",

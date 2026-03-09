@@ -20,19 +20,16 @@ export const qstash = new Client({
  * QStash configuration
  */
 export const QSTASH_CONFIG = {
-  // Base URL for API routes (ensure no trailing slash)
-  // Priority: NEXT_PUBLIC_APP_URL > RENDER_EXTERNAL_URL > localhost
+  // Priority: NEXT_PUBLIC_APP_URL > VERCEL_URL > localhost
   baseUrl: (() => {
     let url = process.env.NEXT_PUBLIC_APP_URL ||
-      (process.env.RENDER_EXTERNAL_URL ? `https://${process.env.RENDER_EXTERNAL_URL}` : null) ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
       "http://localhost:3000"
-    
-    // Ensure URL has protocol
+
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       url = `https://${url}`
     }
-    
-    // Remove trailing slash
+
     return url.replace(/\/$/, "")
   })(),
 

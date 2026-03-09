@@ -15,14 +15,12 @@ export async function generateCampaignReportAction(campaignId: number): Promise<
   try {
     const token = await generateCampaignToken(campaignId)
     
-    // Use admin hostname for professional URL (hannibal.media)
-    const hostname = process.env.NEXT_PUBLIC_ADMIN_HOSTNAME || 
-                     process.env.RENDER_EXTERNAL_URL || 
-                     "hannibalv2.onrender.com"
-    
-    // Build URL (add https:// if not present)
-    const baseUrl = hostname.startsWith('http') 
-      ? hostname 
+    const hostname = process.env.NEXT_PUBLIC_ADMIN_HOSTNAME ||
+                     process.env.VERCEL_URL ||
+                     "localhost:3000"
+
+    const baseUrl = hostname.startsWith('http')
+      ? hostname
       : `https://${hostname}`
     
     const reportUrl = `${baseUrl}/report/${token}`

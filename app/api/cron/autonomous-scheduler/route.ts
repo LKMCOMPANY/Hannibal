@@ -1,5 +1,6 @@
+export const maxDuration = 60
+
 import { type NextRequest, NextResponse } from "next/server"
-import { verifySignatureAppRouter } from "@upstash/qstash/nextjs"
 import { getAllAutonomousSchedules, createAutonomousPublication, hasRecentPublication } from "@/lib/data/autonomous"
 import { enqueueAutonomousPublication } from "@/lib/queue/qstash"
 import { getCurrentHourInTimezone } from "@/lib/utils/timezone"

@@ -6,20 +6,13 @@
 
 import { NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
+import { ADMIN_HOSTNAMES } from "@/lib/constants/hostnames"
 
 const sql = neon(process.env.DATABASE_URL!)
 
 export async function GET(request: Request) {
   const hostname = request.headers.get("x-forwarded-host") || request.headers.get("host") || ""
   const cleanDomain = hostname.split(":")[0]
-
-  // Skip for admin domains
-  const ADMIN_HOSTNAMES = [
-    "localhost",
-    process.env.NEXT_PUBLIC_ADMIN_HOSTNAME,
-    process.env.RENDER_EXTERNAL_HOSTNAME,
-    "hannibalv2.onrender.com",
-  ].filter(Boolean) as string[]
 
   const isAdminDomain = ADMIN_HOSTNAMES.some((h) => hostname.includes(h))
 

@@ -10,14 +10,7 @@
 
 import { NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
-
-// Admin hostnames that should block dashboard access
-const ADMIN_HOSTNAMES = [
-  "localhost",
-  process.env.NEXT_PUBLIC_ADMIN_HOSTNAME,
-  process.env.RENDER_EXTERNAL_HOSTNAME,
-  "hannibalv2.onrender.com", // Render default domain
-].filter(Boolean) as string[]
+import { ADMIN_HOSTNAMES } from "@/lib/constants/hostnames"
 
 const sql = neon(process.env.DATABASE_URL!)
 

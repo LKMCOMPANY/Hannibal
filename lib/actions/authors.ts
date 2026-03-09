@@ -28,15 +28,19 @@ export async function createAuthorAction(data: CreateAuthorData): Promise<Action
   }
 }
 
-export async function updateAuthorField(id: number, siteId: number, field: string, value: any): Promise<ActionResult> {
+/**
+ * Auto-save: persists fields WITHOUT revalidating the page.
+ */
+export async function autoSaveAuthorFields(
+  id: number,
+  data: UpdateAuthorData,
+): Promise<ActionResult> {
   try {
-    const updateData: UpdateAuthorData = { [field]: value }
-    await updateAuthor(id, updateData)
-    revalidatePath(`/dashboard/medias/${siteId}`)
+    await updateAuthor(id, data)
     return { success: true }
   } catch (error) {
-    console.error("Error updating author field:", error)
-    return { success: false, error: "Failed to update author" }
+    console.error("Error auto-saving author fields:", error)
+    return { success: false, error: "Failed to save" }
   }
 }
 

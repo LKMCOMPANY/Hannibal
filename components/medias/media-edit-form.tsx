@@ -3,11 +3,11 @@
 import type React from "react"
 import { AuthorsTab } from "@/components/authors/authors-tab"
 import type { Author } from "@/lib/types/authors"
-import { useState, useEffect } from "react"
-import { useDebounce } from "use-debounce"
+import { useState, useEffect, useRef, useCallback } from "react"
+import { useDebouncedCallback } from "use-debounce"
 import { toast } from "sonner"
 import type { Site } from "@/lib/db"
-import { updateSiteField } from "@/lib/actions/sites"
+import { autoSaveSiteFields } from "@/lib/actions/sites"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -22,279 +22,252 @@ import { AVAILABLE_THEMES } from "@/lib/theme-resolver"
 type SaveStatus = "idle" | "saving" | "saved"
 type FieldSaveStatus = Record<string, SaveStatus>
 
+type FormDataType = {
+  name: string
+  status: string
+  description: string
+  custom_domain: string
+  language: string
+  country: string
+  ideology: string
+  contact_email: string
+  guideline_stylistic: string
+  guideline_political: string
+  thumbnail_image_url: string
+  logo_url: string
+  theme_layout: string
+  theme_primary_color: string
+  theme_accent_color: string
+  not_found_message: string
+  about_page_content: string
+  privacy_page_content: string
+  twitter_handle: string
+  twitter_url: string
+  twitter_api_key: string
+  twitter_client_secret: string
+  twitter_access_token: string
+  twitter_access_token_secret: string
+  twitter_callback_url: string
+  twitter_proxy: string
+}
+
 type MediaEditFormProps = {
   media: Site
   authors: Author[]
 }
 
+function buildFormData(source: Site): FormDataType {
+  return {
+    name: source.name || "",
+    status: source.status || "draft",
+    description: source.description || "",
+    custom_domain: source.custom_domain || "",
+    language: source.language || "",
+    country: source.country || "",
+    ideology: source.ideology || "",
+    contact_email: source.contact_email || "",
+    guideline_stylistic: source.guideline_stylistic || "",
+    guideline_political: source.guideline_political || "",
+    thumbnail_image_url: source.thumbnail_image_url || "",
+    logo_url: source.logo_url || "",
+    theme_layout: source.theme_layout || "default",
+    theme_primary_color: source.theme_primary_color || "#9333ea",
+    theme_accent_color: source.theme_accent_color || "#a855f7",
+    not_found_message: source.not_found_message || "",
+    about_page_content: source.about_page_content || "",
+    privacy_page_content: source.privacy_page_content || "",
+    twitter_handle: source.twitter_handle || "",
+    twitter_url: source.twitter_url || "",
+    twitter_api_key: source.twitter_api_key || "",
+    twitter_client_secret: source.twitter_client_secret || "",
+    twitter_access_token: source.twitter_access_token || "",
+    twitter_access_token_secret: source.twitter_access_token_secret || "",
+    twitter_callback_url: source.twitter_callback_url || "",
+    twitter_proxy: source.twitter_proxy || "",
+  }
+}
+
+function FieldWrapper({ field, label, status, children }: {
+  field: string
+  label: string
+  status: SaveStatus
+  children: React.ReactNode
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label htmlFor={field}>{label}</Label>
+        {status === "saving" && (
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Saving...
+          </span>
+        )}
+        {status === "saved" && (
+          <span
+            className="flex items-center gap-1.5 text-xs animate-in fade-in duration-200"
+            style={{ color: "oklch(var(--success))" }}
+          >
+            <CheckIcon className="h-3 w-3" />
+            Saved
+          </span>
+        )}
+      </div>
+      {children}
+    </div>
+  )
+}
+
 export function MediaEditForm({ media, authors }: MediaEditFormProps) {
   const [fieldStatus, setFieldStatus] = useState<FieldSaveStatus>({})
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
-
   const userLocale = typeof navigator !== "undefined" ? navigator.language : "en-US"
 
-  const [formData, setFormData] = useState({
-    name: media.name || "",
-    status: media.status || "draft",
-    description: media.description || "",
-    custom_domain: media.custom_domain || "",
-    language: media.language || "",
-    country: media.country || "",
-    ideology: media.ideology || "",
-    contact_email: media.contact_email || "",
+  const [formData, setFormData] = useState<FormDataType>(() => buildFormData(media))
 
-    guideline_stylistic: media.guideline_stylistic || "",
-    guideline_political: media.guideline_political || "",
+  // Always-current ref so the debounced callback reads fresh values
+  const formDataRef = useRef(formData)
+  formDataRef.current = formData
 
-    thumbnail_image_url: media.thumbnail_image_url || "",
-    logo_url: media.logo_url || "",
-    theme_layout: media.theme_layout || "default",
-    theme_primary_color: media.theme_primary_color || "#9333ea",
-    theme_accent_color: media.theme_accent_color || "#a855f7",
-    not_found_message: media.not_found_message || "",
+  // Tracks what the server knows — avoids comparing against props that
+  // can change due to revalidation in other parts of the app.
+  const serverValues = useRef<FormDataType>(buildFormData(media))
 
-    about_page_content: media.about_page_content || "",
-    privacy_page_content: media.privacy_page_content || "",
-
-    twitter_handle: media.twitter_handle || "",
-    twitter_url: media.twitter_url || "",
-    twitter_api_key: media.twitter_api_key || "",
-    twitter_client_secret: media.twitter_client_secret || "",
-    twitter_access_token: media.twitter_access_token || "",
-    twitter_access_token_secret: media.twitter_access_token_secret || "",
-    twitter_callback_url: media.twitter_callback_url || "",
-    twitter_proxy: media.twitter_proxy || "",
-  })
-
-  const [debouncedName] = useDebounce(formData.name, 1000)
-  const [debouncedDescription] = useDebounce(formData.description, 1000)
-  const [debouncedCustomDomain] = useDebounce(formData.custom_domain, 1000)
-  const [debouncedLanguage] = useDebounce(formData.language, 1000)
-  const [debouncedCountry] = useDebounce(formData.country, 1000)
-  const [debouncedIdeology] = useDebounce(formData.ideology, 1000)
-  const [debouncedContactEmail] = useDebounce(formData.contact_email, 1000)
-  const [debouncedGuidelineStylistic] = useDebounce(formData.guideline_stylistic, 1000)
-  const [debouncedGuidelinePolitical] = useDebounce(formData.guideline_political, 1000)
-  const [debouncedNotFoundMessage] = useDebounce(formData.not_found_message, 1000)
-  const [debouncedAboutPage] = useDebounce(formData.about_page_content, 1000)
-  const [debouncedPrivacyPage] = useDebounce(formData.privacy_page_content, 1000)
-  const [debouncedTwitterHandle] = useDebounce(formData.twitter_handle, 1000)
-  const [debouncedTwitterUrl] = useDebounce(formData.twitter_url, 1000)
-  const [debouncedTwitterApiKey] = useDebounce(formData.twitter_api_key, 1000)
-  const [debouncedTwitterClientSecret] = useDebounce(formData.twitter_client_secret, 1000)
-  const [debouncedTwitterAccessToken] = useDebounce(formData.twitter_access_token, 1000)
-  const [debouncedTwitterAccessTokenSecret] = useDebounce(formData.twitter_access_token_secret, 1000)
-  const [debouncedTwitterCallbackUrl] = useDebounce(formData.twitter_callback_url, 1000)
-  const [debouncedTwitterProxy] = useDebounce(formData.twitter_proxy, 1000)
+  // Fields modified since the last flush
+  const dirtyFields = useRef<Set<string>>(new Set())
 
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
 
-  useEffect(() => {
-    if (debouncedName !== media.name && debouncedName.trim()) {
-      handleAutoSave("name", debouncedName)
+  const flushSave = useDebouncedCallback(async () => {
+    const fields = [...dirtyFields.current]
+    dirtyFields.current.clear()
+
+    const current = formDataRef.current
+    const updates: Record<string, string> = {}
+
+    for (const field of fields) {
+      const key = field as keyof FormDataType
+      if (current[key] !== serverValues.current[key]) {
+        updates[field] = current[key]
+      }
     }
-  }, [debouncedName])
 
-  useEffect(() => {
-    if (debouncedDescription !== media.description) {
-      handleAutoSave("description", debouncedDescription)
-    }
-  }, [debouncedDescription])
+    if (Object.keys(updates).length === 0) return
 
-  useEffect(() => {
-    if (debouncedCustomDomain !== media.custom_domain) {
-      handleAutoSave("custom_domain", debouncedCustomDomain)
-    }
-  }, [debouncedCustomDomain])
+    const savingFields = Object.keys(updates)
+    setFieldStatus((prev) => {
+      const next = { ...prev }
+      for (const f of savingFields) next[f] = "saving"
+      return next
+    })
 
-  useEffect(() => {
-    if (debouncedLanguage !== media.language) {
-      handleAutoSave("language", debouncedLanguage)
-    }
-  }, [debouncedLanguage])
+    const result = await autoSaveSiteFields(media.id, updates)
 
-  useEffect(() => {
-    if (debouncedCountry !== media.country) {
-      handleAutoSave("country", debouncedCountry)
-    }
-  }, [debouncedCountry])
-
-  useEffect(() => {
-    if (debouncedIdeology !== media.ideology) {
-      handleAutoSave("ideology", debouncedIdeology)
-    }
-  }, [debouncedIdeology])
-
-  useEffect(() => {
-    if (debouncedContactEmail !== media.contact_email) {
-      handleAutoSave("contact_email", debouncedContactEmail)
-    }
-  }, [debouncedContactEmail])
-
-  useEffect(() => {
-    if (debouncedGuidelineStylistic !== media.guideline_stylistic) {
-      handleAutoSave("guideline_stylistic", debouncedGuidelineStylistic)
-    }
-  }, [debouncedGuidelineStylistic])
-
-  useEffect(() => {
-    if (debouncedGuidelinePolitical !== media.guideline_political) {
-      handleAutoSave("guideline_political", debouncedGuidelinePolitical)
-    }
-  }, [debouncedGuidelinePolitical])
-
-  useEffect(() => {
-    if (debouncedNotFoundMessage !== media.not_found_message) {
-      handleAutoSave("not_found_message", debouncedNotFoundMessage)
-    }
-  }, [debouncedNotFoundMessage])
-
-  useEffect(() => {
-    if (debouncedAboutPage !== media.about_page_content) {
-      handleAutoSave("about_page_content", debouncedAboutPage)
-    }
-  }, [debouncedAboutPage])
-
-  useEffect(() => {
-    if (debouncedPrivacyPage !== media.privacy_page_content) {
-      handleAutoSave("privacy_page_content", debouncedPrivacyPage)
-    }
-  }, [debouncedPrivacyPage])
-
-  useEffect(() => {
-    if (debouncedTwitterHandle !== media.twitter_handle) {
-      handleAutoSave("twitter_handle", debouncedTwitterHandle)
-    }
-  }, [debouncedTwitterHandle])
-
-  useEffect(() => {
-    if (debouncedTwitterUrl !== media.twitter_url) {
-      handleAutoSave("twitter_url", debouncedTwitterUrl)
-    }
-  }, [debouncedTwitterUrl])
-
-  useEffect(() => {
-    if (debouncedTwitterApiKey !== media.twitter_api_key) {
-      handleAutoSave("twitter_api_key", debouncedTwitterApiKey)
-    }
-  }, [debouncedTwitterApiKey])
-
-  useEffect(() => {
-    if (debouncedTwitterClientSecret !== media.twitter_client_secret) {
-      handleAutoSave("twitter_client_secret", debouncedTwitterClientSecret)
-    }
-  }, [debouncedTwitterClientSecret])
-
-  useEffect(() => {
-    if (debouncedTwitterAccessToken !== media.twitter_access_token) {
-      handleAutoSave("twitter_access_token", debouncedTwitterAccessToken)
-    }
-  }, [debouncedTwitterAccessToken])
-
-  useEffect(() => {
-    if (debouncedTwitterAccessTokenSecret !== media.twitter_access_token_secret) {
-      handleAutoSave("twitter_access_token_secret", debouncedTwitterAccessTokenSecret)
-    }
-  }, [debouncedTwitterAccessTokenSecret])
-
-  useEffect(() => {
-    if (debouncedTwitterCallbackUrl !== media.twitter_callback_url) {
-      handleAutoSave("twitter_callback_url", debouncedTwitterCallbackUrl)
-    }
-  }, [debouncedTwitterCallbackUrl])
-
-  useEffect(() => {
-    if (debouncedTwitterProxy !== media.twitter_proxy) {
-      handleAutoSave("twitter_proxy", debouncedTwitterProxy)
-    }
-  }, [debouncedTwitterProxy])
-
-  const handleAutoSave = async (field: string, value: any) => {
-    setFieldStatus((prev) => ({ ...prev, [field]: "saving" }))
-
-    const result = await updateSiteField(media.id, field, value)
     if (result.success) {
-      setFieldStatus((prev) => ({ ...prev, [field]: "saved" }))
+      for (const [field, value] of Object.entries(updates)) {
+        serverValues.current[field as keyof FormDataType] = value
+      }
+      setFieldStatus((prev) => {
+        const next = { ...prev }
+        for (const f of savingFields) next[f] = "saved"
+        return next
+      })
       setLastSavedAt(new Date())
 
       setTimeout(() => {
-        setFieldStatus((prev) => ({ ...prev, [field]: "idle" }))
+        setFieldStatus((prev) => {
+          const next = { ...prev }
+          for (const f of savingFields) next[f] = "idle"
+          return next
+        })
       }, 2000)
     } else {
-      setFieldStatus((prev) => ({ ...prev, [field]: "idle" }))
+      for (const f of savingFields) dirtyFields.current.add(f)
+      setFieldStatus((prev) => {
+        const next = { ...prev }
+        for (const f of savingFields) next[f] = "idle"
+        return next
+      })
       toast.error("Error", {
         description: result.error || "Failed to save changes",
       })
     }
-  }
+  }, 1000, { maxWait: 5000 })
 
-  const handleSelectChange = async (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-    await handleAutoSave(field, value)
-  }
+  // Flush pending saves when the component unmounts (e.g. navigation)
+  useEffect(() => () => { flushSave.flush() }, [flushSave])
 
-  const handleColorChange = async (field: "theme_primary_color" | "theme_accent_color", value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-    await handleAutoSave(field, value)
-  }
+  const handleFieldChange = useCallback(
+    (field: keyof FormDataType, value: string) => {
+      setFormData((prev) => ({ ...prev, [field]: value }))
+      dirtyFields.current.add(field)
+      flushSave()
+    },
+    [flushSave],
+  )
 
-  const handleImageUpload = async (file: File, field: "thumbnail_image_url" | "logo_url") => {
-    const setUploading = field === "thumbnail_image_url" ? setUploadingThumbnail : setUploadingLogo
+  // Select / discrete changes: save immediately without revalidation
+  const handleSelectChange = useCallback(
+    async (field: string, value: string) => {
+      setFormData((prev) => ({ ...prev, [field]: value }))
+      setFieldStatus((prev) => ({ ...prev, [field]: "saving" }))
 
-    try {
-      setUploading(true)
-      const formData = new FormData()
-      formData.append("file", file)
+      const result = await autoSaveSiteFields(media.id, { [field]: value })
 
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      })
-
-      if (!response.ok) {
-        throw new Error("Upload failed")
+      if (result.success) {
+        serverValues.current[field as keyof FormDataType] = value
+        setFieldStatus((prev) => ({ ...prev, [field]: "saved" }))
+        setLastSavedAt(new Date())
+        setTimeout(() => {
+          setFieldStatus((prev) => ({ ...prev, [field]: "idle" }))
+        }, 2000)
+      } else {
+        setFieldStatus((prev) => ({ ...prev, [field]: "idle" }))
+        toast.error("Error", {
+          description: result.error || "Failed to save changes",
+        })
       }
+    },
+    [media.id],
+  )
 
-      const data = await response.json()
+  const handleImageUpload = useCallback(
+    async (file: File, field: "thumbnail_image_url" | "logo_url") => {
+      const setUploading = field === "thumbnail_image_url" ? setUploadingThumbnail : setUploadingLogo
 
-      setFormData((prev) => ({ ...prev, [field]: data.url }))
-      await handleAutoSave(field, data.url)
-    } catch (error) {
-      toast.error("Error", {
-        description: "Failed to upload image",
-      })
-    } finally {
-      setUploading(false)
-    }
-  }
+      try {
+        setUploading(true)
+        const body = new FormData()
+        body.append("file", file)
 
-  const FieldWrapper = ({ field, label, children }: { field: string; label: string; children: React.ReactNode }) => {
-    const status = fieldStatus[field] || "idle"
-    return (
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label htmlFor={field}>{label}</Label>
-          {status === "saving" && (
-            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              Saving...
-            </span>
-          )}
-          {status === "saved" && (
-            <span
-              className="flex items-center gap-1.5 text-xs animate-in fade-in duration-200"
-              style={{ color: "oklch(var(--success))" }}
-            >
-              <CheckIcon className="h-3 w-3" />
-              Saved
-            </span>
-          )}
-        </div>
-        {children}
-      </div>
-    )
-  }
+        const response = await fetch("/api/upload", { method: "POST", body })
+
+        if (!response.ok) throw new Error("Upload failed")
+
+        const data = await response.json()
+
+        setFormData((prev) => ({ ...prev, [field]: data.url }))
+        setFieldStatus((prev) => ({ ...prev, [field]: "saving" }))
+
+        const result = await autoSaveSiteFields(media.id, { [field]: data.url })
+
+        if (result.success) {
+          serverValues.current[field] = data.url
+          setFieldStatus((prev) => ({ ...prev, [field]: "saved" }))
+          setLastSavedAt(new Date())
+          setTimeout(() => {
+            setFieldStatus((prev) => ({ ...prev, [field]: "idle" }))
+          }, 2000)
+        }
+      } catch {
+        toast.error("Error", { description: "Failed to upload image" })
+      } finally {
+        setUploading(false)
+      }
+    },
+    [media.id],
+  )
 
   const globalStatus = Object.values(fieldStatus).some((s) => s === "saving")
     ? "saving"
@@ -345,16 +318,16 @@ export function MediaEditForm({ media, authors }: MediaEditFormProps) {
               <CardDescription>Basic information about your media site</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <FieldWrapper field="name" label="Site Name">
+              <FieldWrapper field="name" label="Site Name" status={fieldStatus["name"] || "idle"}>
                 <Input
                   id="name"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) => handleFieldChange("name", e.target.value)}
                   placeholder="Enter site name"
                 />
               </FieldWrapper>
 
-              <FieldWrapper field="status" label="Status">
+              <FieldWrapper field="status" label="Status" status={fieldStatus["status"] || "idle"}>
                 <Select value={formData.status} onValueChange={(value) => handleSelectChange("status", value)}>
                   <SelectTrigger id="status">
                     <SelectValue />
@@ -367,60 +340,60 @@ export function MediaEditForm({ media, authors }: MediaEditFormProps) {
                 </Select>
               </FieldWrapper>
 
-              <FieldWrapper field="description" label="Description (Meta Description)">
+              <FieldWrapper field="description" label="Description (Meta Description)" status={fieldStatus["description"] || "idle"}>
                 <Textarea
                   id="description"
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) => handleFieldChange("description", e.target.value)}
                   placeholder="Enter meta description for SEO"
                   rows={3}
                 />
               </FieldWrapper>
 
-              <FieldWrapper field="custom_domain" label="Custom Domain">
+              <FieldWrapper field="custom_domain" label="Custom Domain" status={fieldStatus["custom_domain"] || "idle"}>
                 <Input
                   id="custom_domain"
                   value={formData.custom_domain}
-                  onChange={(e) => setFormData({ ...formData, custom_domain: e.target.value })}
+                  onChange={(e) => handleFieldChange("custom_domain", e.target.value)}
                   placeholder="example.com"
                 />
               </FieldWrapper>
 
               <div className="grid gap-4 md:grid-cols-2">
-                <FieldWrapper field="language" label="Language (ISO Code)">
+                <FieldWrapper field="language" label="Language (ISO Code)" status={fieldStatus["language"] || "idle"}>
                   <Input
                     id="language"
                     value={formData.language}
-                    onChange={(e) => setFormData({ ...formData, language: e.target.value })}
+                    onChange={(e) => handleFieldChange("language", e.target.value)}
                     placeholder="en, fr, es..."
                   />
                 </FieldWrapper>
 
-                <FieldWrapper field="country" label="Country (ISO Code)">
+                <FieldWrapper field="country" label="Country (ISO Code)" status={fieldStatus["country"] || "idle"}>
                   <Input
                     id="country"
                     value={formData.country}
-                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                    onChange={(e) => handleFieldChange("country", e.target.value)}
                     placeholder="US, FR, ES..."
                   />
                 </FieldWrapper>
               </div>
 
-              <FieldWrapper field="ideology" label="Ideology / Editorial Line">
+              <FieldWrapper field="ideology" label="Ideology / Editorial Line" status={fieldStatus["ideology"] || "idle"}>
                 <Input
                   id="ideology"
                   value={formData.ideology}
-                  onChange={(e) => setFormData({ ...formData, ideology: e.target.value })}
+                  onChange={(e) => handleFieldChange("ideology", e.target.value)}
                   placeholder="Enter editorial ideology"
                 />
               </FieldWrapper>
 
-              <FieldWrapper field="contact_email" label="Public Contact Email">
+              <FieldWrapper field="contact_email" label="Public Contact Email" status={fieldStatus["contact_email"] || "idle"}>
                 <Input
                   id="contact_email"
                   type="email"
                   value={formData.contact_email}
-                  onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
+                  onChange={(e) => handleFieldChange("contact_email", e.target.value)}
                   placeholder="contact@example.com"
                 />
               </FieldWrapper>
@@ -435,11 +408,11 @@ export function MediaEditForm({ media, authors }: MediaEditFormProps) {
               <CardDescription>Guidelines for AI-generated content</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <FieldWrapper field="guideline_stylistic" label="Stylistic Guidelines">
+              <FieldWrapper field="guideline_stylistic" label="Stylistic Guidelines" status={fieldStatus["guideline_stylistic"] || "idle"}>
                 <Textarea
                   id="guideline_stylistic"
                   value={formData.guideline_stylistic}
-                  onChange={(e) => setFormData({ ...formData, guideline_stylistic: e.target.value })}
+                  onChange={(e) => handleFieldChange("guideline_stylistic", e.target.value)}
                   placeholder="Define the writing style, tone, and format for AI-generated content..."
                   rows={8}
                 />
@@ -448,11 +421,11 @@ export function MediaEditForm({ media, authors }: MediaEditFormProps) {
                 </p>
               </FieldWrapper>
 
-              <FieldWrapper field="guideline_political" label="Political / Ideological Guidelines">
+              <FieldWrapper field="guideline_political" label="Political / Ideological Guidelines" status={fieldStatus["guideline_political"] || "idle"}>
                 <Textarea
                   id="guideline_political"
                   value={formData.guideline_political}
-                  onChange={(e) => setFormData({ ...formData, guideline_political: e.target.value })}
+                  onChange={(e) => handleFieldChange("guideline_political", e.target.value)}
                   placeholder="Define the political stance and ideological approach..."
                   rows={8}
                 />
@@ -487,7 +460,7 @@ export function MediaEditForm({ media, authors }: MediaEditFormProps) {
                   )}
                 </div>
 
-                <FieldWrapper field="theme_layout" label="">
+                <FieldWrapper field="theme_layout" label="" status={fieldStatus["theme_layout"] || "idle"}>
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {AVAILABLE_THEMES.map((theme) => (
                       <button
@@ -652,19 +625,19 @@ export function MediaEditForm({ media, authors }: MediaEditFormProps) {
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <FieldWrapper field="theme_primary_color" label="Primary Color">
+                  <FieldWrapper field="theme_primary_color" label="Primary Color" status={fieldStatus["theme_primary_color"] || "idle"}>
                     <div className="flex items-center gap-3">
                       <Input
                         type="color"
                         id="theme_primary_color"
                         value={formData.theme_primary_color}
-                        onChange={(e) => handleColorChange("theme_primary_color", e.target.value)}
+                        onChange={(e) => handleFieldChange("theme_primary_color", e.target.value)}
                         className="h-12 w-20 cursor-pointer"
                       />
                       <Input
                         type="text"
                         value={formData.theme_primary_color}
-                        onChange={(e) => handleColorChange("theme_primary_color", e.target.value)}
+                        onChange={(e) => handleFieldChange("theme_primary_color", e.target.value)}
                         placeholder="#9333ea"
                         className="flex-1 font-mono text-sm"
                       />
@@ -672,19 +645,19 @@ export function MediaEditForm({ media, authors }: MediaEditFormProps) {
                     <p className="typography-muted">Main brand color for links, buttons, and accents</p>
                   </FieldWrapper>
 
-                  <FieldWrapper field="theme_accent_color" label="Accent Color">
+                  <FieldWrapper field="theme_accent_color" label="Accent Color" status={fieldStatus["theme_accent_color"] || "idle"}>
                     <div className="flex items-center gap-3">
                       <Input
                         type="color"
                         id="theme_accent_color"
                         value={formData.theme_accent_color}
-                        onChange={(e) => handleColorChange("theme_accent_color", e.target.value)}
+                        onChange={(e) => handleFieldChange("theme_accent_color", e.target.value)}
                         className="h-12 w-20 cursor-pointer"
                       />
                       <Input
                         type="text"
                         value={formData.theme_accent_color}
-                        onChange={(e) => handleColorChange("theme_accent_color", e.target.value)}
+                        onChange={(e) => handleFieldChange("theme_accent_color", e.target.value)}
                         placeholder="#a855f7"
                         className="flex-1 font-mono text-sm"
                       />
@@ -731,11 +704,11 @@ export function MediaEditForm({ media, authors }: MediaEditFormProps) {
                 </div>
               </div>
 
-              <FieldWrapper field="not_found_message" label="Custom 404 Message">
+              <FieldWrapper field="not_found_message" label="Custom 404 Message" status={fieldStatus["not_found_message"] || "idle"}>
                 <Textarea
                   id="not_found_message"
                   value={formData.not_found_message}
-                  onChange={(e) => setFormData({ ...formData, not_found_message: e.target.value })}
+                  onChange={(e) => handleFieldChange("not_found_message", e.target.value)}
                   placeholder="Custom message for 404 page"
                   rows={3}
                 />
@@ -751,21 +724,21 @@ export function MediaEditForm({ media, authors }: MediaEditFormProps) {
               <CardDescription>Content for your static pages</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <FieldWrapper field="about_page_content" label="About Page Content">
+              <FieldWrapper field="about_page_content" label="About Page Content" status={fieldStatus["about_page_content"] || "idle"}>
                 <Textarea
                   id="about_page_content"
                   value={formData.about_page_content}
-                  onChange={(e) => setFormData({ ...formData, about_page_content: e.target.value })}
+                  onChange={(e) => handleFieldChange("about_page_content", e.target.value)}
                   placeholder="Enter content for the About page..."
                   rows={10}
                 />
               </FieldWrapper>
 
-              <FieldWrapper field="privacy_page_content" label="Privacy Policy Content">
+              <FieldWrapper field="privacy_page_content" label="Privacy Policy Content" status={fieldStatus["privacy_page_content"] || "idle"}>
                 <Textarea
                   id="privacy_page_content"
                   value={formData.privacy_page_content}
-                  onChange={(e) => setFormData({ ...formData, privacy_page_content: e.target.value })}
+                  onChange={(e) => handleFieldChange("privacy_page_content", e.target.value)}
                   placeholder="Enter content for the Privacy Policy page..."
                   rows={10}
                 />
@@ -793,20 +766,20 @@ export function MediaEditForm({ media, authors }: MediaEditFormProps) {
               <CardDescription>Basic Twitter account information</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <FieldWrapper field="twitter_handle" label="Twitter Username (without @)">
+              <FieldWrapper field="twitter_handle" label="Twitter Username (without @)" status={fieldStatus["twitter_handle"] || "idle"}>
                 <Input
                   id="twitter_handle"
                   value={formData.twitter_handle}
-                  onChange={(e) => setFormData({ ...formData, twitter_handle: e.target.value })}
+                  onChange={(e) => handleFieldChange("twitter_handle", e.target.value)}
                   placeholder="username"
                 />
               </FieldWrapper>
 
-              <FieldWrapper field="twitter_url" label="Twitter Profile URL">
+              <FieldWrapper field="twitter_url" label="Twitter Profile URL" status={fieldStatus["twitter_url"] || "idle"}>
                 <Input
                   id="twitter_url"
                   value={formData.twitter_url}
-                  onChange={(e) => setFormData({ ...formData, twitter_url: e.target.value })}
+                  onChange={(e) => handleFieldChange("twitter_url", e.target.value)}
                   placeholder="https://twitter.com/username"
                 />
               </FieldWrapper>
@@ -819,42 +792,42 @@ export function MediaEditForm({ media, authors }: MediaEditFormProps) {
               <CardDescription>API credentials for Twitter integration</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <FieldWrapper field="twitter_api_key" label="API Key (Consumer Key)">
+              <FieldWrapper field="twitter_api_key" label="API Key (Consumer Key)" status={fieldStatus["twitter_api_key"] || "idle"}>
                 <Input
                   id="twitter_api_key"
                   type="password"
                   value={formData.twitter_api_key}
-                  onChange={(e) => setFormData({ ...formData, twitter_api_key: e.target.value })}
+                  onChange={(e) => handleFieldChange("twitter_api_key", e.target.value)}
                   placeholder="Enter API key"
                 />
               </FieldWrapper>
 
-              <FieldWrapper field="twitter_client_secret" label="API Secret (Consumer Secret)">
+              <FieldWrapper field="twitter_client_secret" label="API Secret (Consumer Secret)" status={fieldStatus["twitter_client_secret"] || "idle"}>
                 <Input
                   id="twitter_client_secret"
                   type="password"
                   value={formData.twitter_client_secret}
-                  onChange={(e) => setFormData({ ...formData, twitter_client_secret: e.target.value })}
+                  onChange={(e) => handleFieldChange("twitter_client_secret", e.target.value)}
                   placeholder="Enter API secret"
                 />
               </FieldWrapper>
 
-              <FieldWrapper field="twitter_access_token" label="Access Token">
+              <FieldWrapper field="twitter_access_token" label="Access Token" status={fieldStatus["twitter_access_token"] || "idle"}>
                 <Input
                   id="twitter_access_token"
                   type="password"
                   value={formData.twitter_access_token}
-                  onChange={(e) => setFormData({ ...formData, twitter_access_token: e.target.value })}
+                  onChange={(e) => handleFieldChange("twitter_access_token", e.target.value)}
                   placeholder="Enter access token"
                 />
               </FieldWrapper>
 
-              <FieldWrapper field="twitter_access_token_secret" label="Access Token Secret">
+              <FieldWrapper field="twitter_access_token_secret" label="Access Token Secret" status={fieldStatus["twitter_access_token_secret"] || "idle"}>
                 <Input
                   id="twitter_access_token_secret"
                   type="password"
                   value={formData.twitter_access_token_secret}
-                  onChange={(e) => setFormData({ ...formData, twitter_access_token_secret: e.target.value })}
+                  onChange={(e) => handleFieldChange("twitter_access_token_secret", e.target.value)}
                   placeholder="Enter access token secret"
                 />
               </FieldWrapper>
@@ -867,20 +840,20 @@ export function MediaEditForm({ media, authors }: MediaEditFormProps) {
               <CardDescription>Optional advanced settings</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <FieldWrapper field="twitter_callback_url" label="Callback URL">
+              <FieldWrapper field="twitter_callback_url" label="Callback URL" status={fieldStatus["twitter_callback_url"] || "idle"}>
                 <Input
                   id="twitter_callback_url"
                   value={formData.twitter_callback_url}
-                  onChange={(e) => setFormData({ ...formData, twitter_callback_url: e.target.value })}
+                  onChange={(e) => handleFieldChange("twitter_callback_url", e.target.value)}
                   placeholder="https://example.com/callback"
                 />
               </FieldWrapper>
 
-              <FieldWrapper field="twitter_proxy" label="Proxy (Optional)">
+              <FieldWrapper field="twitter_proxy" label="Proxy (Optional)" status={fieldStatus["twitter_proxy"] || "idle"}>
                 <Input
                   id="twitter_proxy"
                   value={formData.twitter_proxy}
-                  onChange={(e) => setFormData({ ...formData, twitter_proxy: e.target.value })}
+                  onChange={(e) => handleFieldChange("twitter_proxy", e.target.value)}
                   placeholder="http://proxy.example.com:8080"
                 />
               </FieldWrapper>
