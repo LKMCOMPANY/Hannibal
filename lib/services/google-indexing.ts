@@ -79,13 +79,13 @@ async function checkQuotaAvailable(): Promise<boolean> {
     const available = usedToday < QUOTA_LIMIT_PER_DAY
 
     if (!available) {
-      console.warn(`[Indexing] ⚠️ Quota exhausted: ${usedToday}/${QUOTA_LIMIT_PER_DAY}`)
+      void 0
     }
 
     return available
   } catch (error) {
     // If table doesn't exist or error, assume quota available
-    console.warn("[Indexing] Could not check quota (table may not exist), assuming available")
+    void 0
     return true
   }
 }
@@ -111,7 +111,7 @@ async function logIndexingAttempt(
     `
   } catch (error) {
     // Swallow errors - logging failure shouldn't break anything
-    console.error("[Indexing] Failed to log (non-critical):", error)
+    void error
   }
 }
 
@@ -133,7 +133,7 @@ async function requestIndexingAPI(url: string): Promise<void> {
     },
   })
 
-  console.log(`⚡ [Indexing API] Requested: ${url}`)
+  void 0
 }
 
 /**
@@ -146,7 +146,7 @@ async function pingSitemap(sitemapUrl: string): Promise<void> {
   const response = await fetch(pingUrl, {
     method: "GET",
     headers: {
-      "User-Agent": "Hannibal/1.0 (+https://hannibalv2.onrender.com)",
+      "User-Agent": "Hannibal/1.0 (+https://hannibal.media)",
     },
   })
 
@@ -154,7 +154,7 @@ async function pingSitemap(sitemapUrl: string): Promise<void> {
     throw new Error(`Sitemap ping failed: ${response.status}`)
   }
 
-  console.log(`📡 [Sitemap Ping] Sent: ${sitemapUrl}`)
+  void 0
 }
 
 // ============================================================================
@@ -214,7 +214,7 @@ export async function notifyGoogleIndexing(
     if (article.source_type === "manual" || article.source_type === "campaign") {
       // Check if credentials are configured
       if (!hasIndexingCredentials()) {
-        console.warn("[Indexing] ⚠️ Credentials not configured, falling back to sitemap ping")
+        void 0
         await pingSitemap(sitemapUrl)
         await logIndexingAttempt(article.id, articleUrl, "ping", true)
         
@@ -242,7 +242,7 @@ export async function notifyGoogleIndexing(
         } catch (error) {
           // Indexing API failed, fallback to sitemap ping
           const errorMsg = error instanceof Error ? error.message : "Unknown error"
-          console.error(`[Indexing] ❌ API failed, fallback to ping:`, errorMsg)
+          void 0
           
           await logIndexingAttempt(article.id, articleUrl, "api", false, errorMsg)
 
@@ -271,7 +271,7 @@ export async function notifyGoogleIndexing(
         }
       } else {
         // Quota exhausted, use sitemap ping
-        console.log("[Indexing] 📊 Quota exhausted, using sitemap ping")
+        void 0
         
         try {
           await pingSitemap(sitemapUrl)
@@ -297,7 +297,7 @@ export async function notifyGoogleIndexing(
     }
 
     // Unknown source_type, default to sitemap ping
-    console.warn(`[Indexing] Unknown source_type: ${article.source_type}, using sitemap ping`)
+    void 0
     await pingSitemap(sitemapUrl)
     await logIndexingAttempt(article.id, articleUrl, "ping", true)
     
@@ -309,7 +309,7 @@ export async function notifyGoogleIndexing(
   } catch (error) {
     // CRITICAL: Catch-all to ensure function NEVER throws
     const errorMsg = error instanceof Error ? error.message : "Unknown error"
-    console.error("[Indexing] ❌ Critical error (non-blocking):", errorMsg)
+    void 0
     
     return {
       success: false,

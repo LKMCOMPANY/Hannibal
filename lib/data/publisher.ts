@@ -74,7 +74,7 @@ export async function createArticle(input: CreateArticleInput): Promise<ArticleW
         await scheduleXPublicationForArticle(article)
       } catch (error) {
         // Log error but don't fail article creation
-        console.error("[Publisher] Failed to schedule X publication:", error)
+        void error
       }
     }
 
@@ -91,13 +91,13 @@ export async function createArticle(input: CreateArticleInput): Promise<ArticleW
         }
       } catch (error) {
         // Log error but don't fail article creation
-        console.error("[Publisher] Failed to notify Google indexing (non-critical):", error)
+        void error
       }
     }
 
     return article
   } catch (error) {
-    console.error("[v0] Error creating article:", error)
+    void error
     throw new Error("Failed to create article in database")
   }
 }
@@ -115,7 +115,7 @@ async function scheduleXPublicationForArticle(article: ArticleWithId): Promise<v
     // Get site info for domain
     const site = await getSiteById(article.site_id)
     if (!site) {
-      console.warn(`[Publisher] Site ${article.site_id} not found, skipping X publication`)
+      void 0
       return
     }
 
@@ -149,9 +149,9 @@ async function scheduleXPublicationForArticle(article: ArticleWithId): Promise<v
       600 // 10 minutes
     )
 
-    console.log(`[Publisher] ✅ X publication scheduled: ID ${xPublication.id}, posts in 10 minutes`)
+    void 0
   } catch (error) {
-    console.error("[Publisher] Error scheduling X publication:", error)
+    void error
     throw error
   }
 }
@@ -222,7 +222,7 @@ export async function updateArticle(id: number, input: UpdateArticleInput): Prom
 
     return result[0] as ArticleWithId
   } catch (error) {
-    console.error("[v0] Error updating article:", error)
+    void error
     throw error
   }
 }
@@ -338,7 +338,7 @@ export async function bulkCreateArticles(articles: CreateArticleInput[]): Promis
     const result = await sql.unsafe(query, await Promise.all(values))
     return result as ArticleWithId[]
   } catch (error) {
-    console.error("[v0] Error bulk creating articles:", error)
+    void error
     throw new Error("Failed to bulk create articles")
   }
 }
@@ -370,7 +370,7 @@ export async function slugExists(slug: string, siteId: number, excludeId?: numbe
 
     return result.length > 0
   } catch (error) {
-    console.error("[v0] Error checking slug existence:", error)
+    void error
     return false
   }
 }

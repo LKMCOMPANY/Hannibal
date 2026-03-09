@@ -170,7 +170,7 @@ export class TwitterClient {
       const url = "https://api.twitter.com/1.1/account/verify_credentials.json"
       const authHeader = generateOAuthHeader("GET", url, this.credentials)
 
-      console.log("[Twitter] Testing connection...")
+      void 0
 
       const response = await fetch(url, {
         method: "GET",
@@ -209,7 +209,7 @@ export class TwitterClient {
         },
       }
     } catch (error: any) {
-      console.error("[Twitter] Connection test error:", error)
+      void error
       return {
         success: false,
         message: `Connection error: ${error.message}`,
@@ -234,10 +234,7 @@ export class TwitterClient {
       const url = "https://api.twitter.com/2/tweets"
       const body = JSON.stringify({ text: text.trim() })
 
-      console.log("[Twitter] Posting tweet:", {
-        text_length: text.length,
-        preview: text.substring(0, 50) + "...",
-      })
+      void 0
 
       const authHeader = generateOAuthHeader("POST", url, this.credentials)
 
@@ -254,7 +251,7 @@ export class TwitterClient {
       const responseText = await response.text()
 
       if (!response.ok) {
-        console.error("[Twitter] API error:", response.status, responseText)
+        void 0
         throw new Error(`Twitter API error (${response.status}): ${responseText}`)
       }
 
@@ -268,11 +265,11 @@ export class TwitterClient {
         throw new Error("Invalid Twitter response: no data")
       }
 
-      console.log("[Twitter] ✅ Tweet posted successfully:", data.data.id)
+      void 0
 
       return data.data
     } catch (error: any) {
-      console.error("[Twitter] Post tweet error:", error)
+      void error
       throw error
     }
   }

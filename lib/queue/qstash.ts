@@ -12,14 +12,8 @@ import { Client } from "@upstash/qstash"
  * Uses environment variables for authentication
  */
 export const qstash = new Client({
-  // HARDCODED TOKEN FOR DEBUGGING
-  token: "eyJVc2VySUQiOiJhMmNlNTdlYi04ZDdjLTQ1ZjktYmVkZC1iYjE4ZWUzMjUwMDMiLCJQYXNzd29yZCI6IjYzZjczYmQwNDJjZDRhYjc4YjQ5OGI2YmQ1YzRlZjE5In0=",
+  token: process.env.QSTASH_TOKEN!,
 })
-
-// DEBUG LOG
-console.log("[DEBUG] QStash Token loaded:", process.env.QSTASH_TOKEN ? 
-  `${process.env.QSTASH_TOKEN.substring(0, 10)}... (length: ${process.env.QSTASH_TOKEN.length})` : 
-  "MISSING");
 
 
 /**
@@ -91,32 +85,20 @@ export async function enqueueCampaignPublication(job: CampaignPublicationJob, de
   try {
     const url = `${QSTASH_CONFIG.baseUrl}/api/queue/campaign-publication`
 
-    console.log("[v0] Enqueueing to URL:", url)
-
     const publishOptions: any = {
       url,
-      body: job, // Pass object directly, publishJSON will stringify it
+      body: job,
       retries: QSTASH_CONFIG.retries,
     }
 
-    // Add delay if specified
     if (delaySeconds && delaySeconds > 0) {
       publishOptions.delay = delaySeconds
     }
 
     const result = await qstash.publishJSON(publishOptions)
 
-    console.log("[v0] Enqueued campaign publication:", {
-      messageId: result.messageId,
-      campaignId: job.campaignId,
-      publicationId: job.publicationId,
-      delaySeconds,
-      url,
-    })
-
     return result.messageId
   } catch (error) {
-    console.error("[v0] Failed to enqueue campaign publication:", error)
     throw new Error(`Failed to enqueue job: ${error instanceof Error ? error.message : "Unknown error"}`)
   }
 }
@@ -143,17 +125,9 @@ export async function enqueueCampaignPublications(
       const messageId = await enqueueCampaignPublication(job, delay)
       messageIds.push(messageId)
     } catch (error) {
-      console.error(`[v0] Failed to enqueue publication ${job.publicationId}:`, error)
       // Continue with other jobs even if one fails
     }
   }
-
-  console.log("[v0] Enqueued campaign publications:", {
-    total: jobs.length,
-    successful: messageIds.length,
-    failed: jobs.length - messageIds.length,
-    deploymentSpeedMinutes,
-  })
 
   return messageIds
 }
@@ -182,7 +156,7 @@ export async function verifyQStashSignature(signature: string, signingKey: strin
 
     return true
   } catch (error) {
-    console.error("[v0] QStash signature verification failed:", error)
+    void error
     return false
   }
 }
@@ -195,12 +169,8 @@ export async function verifyQStashSignature(signature: string, signingKey: strin
  */
 export async function getQStashMessage(messageId: string) {
   try {
-    // Note: QStash doesn't have a direct message lookup API
-    // This is a placeholder for future implementation
-    console.log("[v0] Getting QStash message:", messageId)
     return null
   } catch (error) {
-    console.error("[v0] Failed to get QStash message:", error)
     return null
   }
 }
@@ -223,32 +193,20 @@ export async function enqueueAutonomousPublication(
   try {
     const url = `${QSTASH_CONFIG.baseUrl}/api/queue/autonomous-publication`
 
-    console.log("[Autonomous] Enqueueing to URL:", url)
-
     const publishOptions: any = {
       url,
       body: job,
       retries: QSTASH_CONFIG.retries,
     }
 
-    // Add delay if specified
     if (delaySeconds && delaySeconds > 0) {
       publishOptions.delay = delaySeconds
     }
 
     const result = await qstash.publishJSON(publishOptions)
 
-    console.log("[Autonomous] Enqueued autonomous publication:", {
-      messageId: result.messageId,
-      publicationId: job.publicationId,
-      siteId: job.siteId,
-      delaySeconds,
-      url,
-    })
-
     return result.messageId
   } catch (error) {
-    console.error("[Autonomous] Failed to enqueue autonomous publication:", error)
     throw new Error(`Failed to enqueue job: ${error instanceof Error ? error.message : "Unknown error"}`)
   }
 }
@@ -271,32 +229,20 @@ export async function enqueueXPublication(
   try {
     const url = `${QSTASH_CONFIG.baseUrl}/api/queue/x-publication`
 
-    console.log("[X Publisher] Enqueueing to URL:", url)
-
     const publishOptions: any = {
       url,
       body: job,
       retries: QSTASH_CONFIG.retries,
     }
 
-    // Add delay
     if (delaySeconds > 0) {
       publishOptions.delay = delaySeconds
     }
 
     const result = await qstash.publishJSON(publishOptions)
 
-    console.log("[X Publisher] Enqueued X publication:", {
-      messageId: result.messageId,
-      publicationId: job.publicationId,
-      articleId: job.articleId,
-      delaySeconds,
-      url,
-    })
-
     return result.messageId
   } catch (error) {
-    console.error("[X Publisher] Failed to enqueue X publication:", error)
     throw new Error(`Failed to enqueue job: ${error instanceof Error ? error.message : "Unknown error"}`)
   }
 }

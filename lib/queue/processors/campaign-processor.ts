@@ -69,9 +69,7 @@ export async function processCampaignPublication(job: CampaignPublicationJob): P
       const targetAuthors = await getAuthorsBySiteId(targetSiteId)
 
       if (targetAuthors.length === 0) {
-        console.warn(
-          `[v0] No authors found for target site ${targetSiteId}. Article will be created without an author.`,
-        )
+        void 0
         finalTargetAuthorId = null
       } else {
         // Try to find author with same name as source article author
@@ -109,9 +107,7 @@ export async function processCampaignPublication(job: CampaignPublicationJob): P
     const validCategoryValues = ARTICLE_CATEGORIES.map((c) => c.value)
     const finalCategory = validCategoryValues.includes(category) ? category : "Politics"
 
-    if (category !== finalCategory) {
-      console.warn(`[v0] Category validation: "${category}" -> "${finalCategory}"`)
-    }
+    void (category !== finalCategory)
 
     const generatedSlug = await generateUniqueSlug(title, targetSiteId)
 
@@ -137,13 +133,8 @@ export async function processCampaignPublication(job: CampaignPublicationJob): P
       selectedImageCaption = featuredImageCaption || `Campaign Image ${randomIndex + 1}`
       selectedImageAlt = title // Use article title as alt text
 
-      console.log(
-        `[v0] Selected random image ${randomIndex + 1}/${campaign.campaign_images.length} for publication ${publicationId}`,
-      )
     } else {
-      // Use source article image with AI-generated or translated caption
       selectedImageCaption = featuredImageCaption || sourceArticle.featured_image_caption || undefined
-      console.log(`[v0] No campaign images available, using source article image for publication ${publicationId}`)
     }
 
     const createdArticle = await createArticle({
@@ -175,7 +166,7 @@ export async function processCampaignPublication(job: CampaignPublicationJob): P
       articleId: createdArticle.id,
     }
   } catch (error) {
-    console.error("[v0] Campaign publication processing failed:", error)
+    void error
 
     const errorMessage = error instanceof Error ? error.message : "Unknown error"
 
@@ -215,7 +206,7 @@ async function updatePublicationStatus(
       WHERE id = ${publicationId}
     `
   } catch (error) {
-    console.error("[v0] Failed to update publication status:", error)
+    void error
     throw error
   }
 }
@@ -263,7 +254,7 @@ async function checkAndUpdateCampaignStatus(campaignId: number): Promise<void> {
       WHERE id = ${campaignId}
     `
   } catch (error) {
-    console.error("[v0] Failed to update campaign status:", error)
+    void error
     // Don't throw - this is not critical
   }
 }
@@ -278,7 +269,7 @@ async function getAuthorById(authorId: number) {
     `
     return result[0] || null
   } catch (error) {
-    console.error("[v0] Failed to get author:", error)
+    void error
     return null
   }
 }

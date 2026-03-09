@@ -66,19 +66,12 @@ export async function createCampaignAction(
       WHERE id = ${campaign.id}
     `
 
-    console.log("[v0] Campaign created and jobs enqueued:", {
-      campaignId: campaign.id,
-      publicationsCount: publications.length,
-      deploymentSpeedMinutes,
-      campaignImagesCount: data.campaign_images?.length || 0,
-    })
-
     // Revalidate campaign pages
     revalidatePath("/dashboard/campaigns")
 
     return { success: true, campaignId: campaign.id }
   } catch (error) {
-    console.error("[v0] Error creating campaign:", error)
+    void error
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to create campaign",
@@ -102,7 +95,7 @@ export async function updateCampaignAction(
 
     return { success: true }
   } catch (error) {
-    console.error("[v0] Error updating campaign:", error)
+    void error
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to update campaign",
@@ -122,7 +115,7 @@ export async function deleteCampaignAction(id: number): Promise<{ success: boole
 
     return { success: true }
   } catch (error) {
-    console.error("[v0] Error deleting campaign:", error)
+    void error
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to delete campaign",
@@ -147,11 +140,6 @@ export async function deleteCampaignWithArticlesAction(
       }
     }
 
-    console.log("[v0] Campaign deleted with articles:", {
-      campaignId: id,
-      deletedArticles: result.deletedArticles,
-    })
-
     // Revalidate campaign pages
     revalidatePath("/dashboard/campaigns")
     revalidatePath(`/dashboard/campaigns/${id}`)
@@ -161,7 +149,7 @@ export async function deleteCampaignWithArticlesAction(
       deletedArticles: result.deletedArticles,
     }
   } catch (error) {
-    console.error("[v0] Error deleting campaign with articles:", error)
+    void error
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to delete campaign and articles",
