@@ -48,6 +48,8 @@ export type Site = {
   twitter_handle: string | null
   twitter_url: string | null
   twitter_token: string | null
+  /** When false, X (Twitter) auto-post is paused: articles with x_post will not schedule a tweet for this site. */
+  twitter_auto_enabled: boolean | null
   contact_email: string | null
 
   // Analytics
@@ -98,6 +100,7 @@ export type SiteCreateInput = {
   ideology?: string
   twitter_handle?: string
   twitter_url?: string
+  twitter_auto_enabled?: boolean
   contact_email?: string
   thumbnail_image_url?: string
   logo_url?: string

@@ -118,6 +118,11 @@ async function scheduleXPublicationForArticle(article: ArticleWithId): Promise<v
       return
     }
 
+    // Respect per-media X auto-post setting (pause = do not schedule)
+    if (site.twitter_auto_enabled === false) {
+      return
+    }
+
     // Build article URL
     const articleUrl = site.custom_domain
       ? `https://${site.custom_domain}/article/${article.slug}`

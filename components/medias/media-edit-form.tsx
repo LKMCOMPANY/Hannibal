@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
 import { Upload, Loader2, CheckIcon, Eye } from "lucide-react"
 import Image from "next/image"
 import { AVAILABLE_THEMES } from "@/lib/theme-resolver"
@@ -49,6 +50,7 @@ type FormDataType = {
   twitter_access_token_secret: string
   twitter_callback_url: string
   twitter_proxy: string
+  twitter_auto_enabled: boolean
 }
 
 type MediaEditFormProps = {
@@ -84,6 +86,7 @@ function buildFormData(source: Site): FormDataType {
     twitter_access_token_secret: source.twitter_access_token_secret || "",
     twitter_callback_url: source.twitter_callback_url || "",
     twitter_proxy: source.twitter_proxy || "",
+    twitter_auto_enabled: source.twitter_auto_enabled ?? false,
   }
 }
 
@@ -226,6 +229,31 @@ export function MediaEditForm({ media, authors }: MediaEditFormProps) {
         setFieldStatus((prev) => ({ ...prev, [field]: "idle" }))
         toast.error("Error", {
           description: result.error || "Failed to save changes",
+        })
+      }
+    },
+    [media.id],
+  )
+
+  const handleBooleanChange = useCallback(
+    async (field: keyof FormDataType, value: boolean) => {
+      setFormData((prev) => ({ ...prev, [field]: value }))
+      setFieldStatus((prev) => ({ ...prev, [field]: "saving" }))
+
+      const result = await autoSaveSiteFields(media.id, { [field]: value })
+
+      if (result.success) {
+        serverValues.current[field as keyof FormDataType] = value
+        setFieldStatus((prev) => ({ ...prev, [field]: "saved" }))
+        setLastSavedAt(new Date())
+        setTimeout(() => {
+          setFieldStatus((prev) => ({ ...prev, [field]: "idle" }))
+        }, 2000)
+      } else {
+        setFormData((prev) => ({ ...prev, [field]: serverValues.current[field as keyof FormDataType] }))
+        setFieldStatus((prev) => ({ ...prev, [field]: "idle" }))
+        toast.error("Error", {
+          description: result.error || "Failed to save",
         })
       }
     },
@@ -760,6 +788,42 @@ export function MediaEditForm({ media, authors }: MediaEditFormProps) {
         </TabsContent>
 
         <TabsContent value="twitter" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <CardTitle>Auto-post to X (Twitter)</CardTitle>
+                  <CardDescription>
+                    When enabled, publishing an article with a tweet text will schedule a post for this media. When paused, no tweets are scheduled.
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-3">
+                  {fieldStatus["twitter_auto_enabled"] === "saving" && (
+                    <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Saving...
+                    </span>
+                  )}
+                  {fieldStatus["twitter_auto_enabled"] === "saved" && (
+                    <span className="flex items-center gap-1.5 text-xs" style={{ color: "oklch(var(--success))" }}>
+                      <CheckIcon className="h-3 w-3" />
+                      Saved
+                    </span>
+                  )}
+                  <Label htmlFor="twitter_auto_enabled" className="text-sm font-medium">
+                    {formData.twitter_auto_enabled ? "Enabled" : "Paused"}
+                  </Label>
+                  <Switch
+                    id="twitter_auto_enabled"
+                    checked={formData.twitter_auto_enabled}
+                    onCheckedChange={(checked) => handleBooleanChange("twitter_auto_enabled", checked)}
+                    aria-label="Toggle X (Twitter) auto-post for this media"
+                  />
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Twitter Profile</CardTitle>
