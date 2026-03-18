@@ -202,9 +202,10 @@ export function PublishForm({ sites }: PublishFormProps) {
         toast.success("Article published successfully")
         router.push("/dashboard/articles")
       } else {
-        toast.error("Failed to publish article", {
-          description: result.error,
-        })
+        const detail = result.validationErrors
+          ? Object.values(result.validationErrors).join(", ")
+          : result.error
+        toast.error("Failed to publish article", { description: detail })
       }
     } catch (error) {
       console.error("[v0] Error publishing article:", error)
@@ -244,9 +245,10 @@ export function PublishForm({ sites }: PublishFormProps) {
         toast.success("Article scheduled successfully")
         router.push("/dashboard/articles")
       } else {
-        toast.error("Failed to schedule article", {
-          description: result.error,
-        })
+        const detail = result.validationErrors
+          ? Object.values(result.validationErrors).join(", ")
+          : result.error
+        toast.error("Failed to schedule article", { description: detail })
       }
     } catch (error) {
       console.error("[v0] Error scheduling article:", error)

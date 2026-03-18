@@ -16,7 +16,8 @@ import {
   archiveArticle as archiveArticleInDb,
   bulkCreateArticles as bulkCreateArticlesInDb,
   slugExists,
-  generateUniqueSlug, // Import generateUniqueSlug from data layer
+  generateUniqueSlug,
+  generateSlug,
 } from "@/lib/data/publisher"
 import { validateCreateArticle, validateUpdateArticle, generateExcerpt } from "@/lib/validation/articles"
 import type {
@@ -32,6 +33,15 @@ import type {
  */
 export async function createArticle(input: CreateArticleInput, options: PublishOptions = {}): Promise<PublisherResult> {
   try {
+    // Normalize slug server-side before validation.
+    // The client generates slugs with a basic regex that produces empty strings
+    // for non-Latin titles (Arabic, CJK, Cyrillic, etc.). We always use the
+    // server-side slugify (with transliteration) as the source of truth.
+    const normalizedSlug = generateSlug(input.title)
+    if (!input.slug || !/^[a-z0-9-]+$/.test(input.slug) || normalizedSlug.length > 0) {
+      input.slug = normalizedSlug || `article-${Date.now()}`
+    }
+
     // Auto-generate fields if requested
     if (options.autoGenerate) {
       if (!input.slug) {
