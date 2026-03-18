@@ -1,6 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+
+  experimental: {
+    serverActions: {
+      allowedOrigins: [
+        'hannibal.media',
+        'www.hannibal.media',
+        'hannibal-five.vercel.app',
+      ],
+    },
+  },
   
   eslint: {
     ignoreDuringBuilds: true,
